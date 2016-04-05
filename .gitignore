@@ -1,0 +1,6 @@
+.vagga
+target
+*.rs.bk
+*.xcf
+*.nuget
+*.log

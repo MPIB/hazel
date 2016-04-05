@@ -1,0 +1,79 @@
+minimum-vagga: v0.6.0
+
+containers:
+    postgres:
+        environ:
+            PG_PORT: 5432
+            PG_DB: hazel
+            PG_USER: postgres
+            PG_PASSWORD: postgr3s
+            PGDATA: /data
+            PG_BIN: /usr/lib/postgresql/9.5/bin
+        volumes:
+            /data: !Persistent { name: postgres.data }
+        setup:
+            - !Ubuntu xenial
+            - !Install [postgresql-9.5]
+            - !EnsureDir /data
+        auto-clean: true
+    rust:
+        auto-clean: true
+        environ:
+            HOME: /work/target
+        setup:
+            - !Ubuntu xenial
+            - !UbuntuUniverse
+            - !Install [build-essential, ca-certificates, pkg-config, file, openssl, libssl-dev, libpq-dev, libldap2-dev, liblzma-dev]
+            - !TarInstall
+              url: "https://static.rust-lang.org/dist/rust-1.9.0-x86_64-unknown-linux-gnu.tar.gz"
+              script: "./install.sh --prefix=/usr --components=rustc,rust-std-x86_64-unknown-linux-gnu,cargo"
+
+commands:
+
+    database: &database !Command
+        description: Run hazeldb postgresql server
+        container: postgres
+        run: |
+          chown postgres:postgres $PGDATA;
+          if [ -z $(ls -A $PGDATA) ]; then
+            su postgres -c "$PG_BIN/pg_ctl initdb";
+            su postgres -c "echo 'host all all all trust' >> $PGDATA/pg_hba.conf"
+            su postgres -c "$PG_BIN/pg_ctl -w -o '-F --port=$PG_PORT -k /tmp' start";
+            su postgres -c "$PG_BIN/psql -h 127.0.0.1 -p $PG_PORT -c \"ALTER USER $PG_USER WITH PASSWORD '$PG_PASSWORD';\""
+            su postgres -c "$PG_BIN/createdb -h 127.0.0.1 -p $PG_PORT $PG_DB -O $PG_USER";
+          else
+            su postgres -c "$PG_BIN/pg_ctl -w -o '-F --port=$PG_PORT -k /tmp' start";
+          fi
+          while [ ! -f /work/.dbcreation ]; do sleep 0.2; done
+          rm /work/.dbcreation # Release lock
+          sleep infinity
+
+    psql: !Supervise
+        description: Access the test database with psql
+        children:
+            psql: !Command
+                container: postgres
+                run: |
+                        touch /work/.dbcreation # Create lock file
+                        while [ -f /work/.dbcreation ]; do sleep 0.2; done # Acquire lock
+                        psql postgres://$PG_USER:$PG_PASSWORD@127.0.0.1/$PG_DB
+            db: *database
+
+    build: !Command
+        description: Build hazel with rust stable
+        container: rust
+        run: |
+            cargo install --git https://github.com/mmstick/cargo-deb/
+            cargo build --no-default-features --features stable --release
+            cargo deb --no-build
+
+    run: !Supervise
+        description: Run hazel with empty postgresql server
+        children:
+            hazel: !Command
+                container: rust
+                run: |
+                        touch /work/.dbcreation # Create lock file
+                        while [ -f /work/.dbcreation ]; do sleep 0.2; done # Acquire lock
+                        cargo run --no-default-features --features stable --release
+            db: *database

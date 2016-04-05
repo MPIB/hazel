@@ -1,0 +1,258 @@
+<!-- Copyright (C) 2016  Max Planck Institute for Human Development
+
+   This program is free software: you can redistribute it and/or modify
+   it under the terms of the GNU Affero General Public License as published
+   by the Free Software Foundation, either version 3 of the License, or
+   (at your option) any later version.
+
+   This program is distributed in the hope that it will be useful,
+   but WITHOUT ANY WARRANTY; without even the implied warranty of
+   MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+   GNU Affero General Public License for more details.
+
+   You should have received a copy of the GNU Affero General Public License
+   along with this program.  If not, see <http://www.gnu.org/licenses/>.
+-->
+
+<!doctype html>
+<html>
+    <head>
+        <title>Chocolatey - {{user.name}}</title>
+        <link rel="stylesheet" href="https://netdna.bootstrapcdn.com/bootstrap/3.3.0/css/bootstrap.min.css">
+        <link rel="stylesheet" href="https://bootflat.github.io/bootflat/css/bootflat.css">
+        <link rel="stylesheet" href="/css/user.css">
+        <link rel="stylesheet" href="/css/dropzone.min.css">
+        <link rel="apple-touch-icon" sizes="57x57" href="/apple-touch-icon-57x57.png">
+        <link rel="apple-touch-icon" sizes="60x60" href="/apple-touch-icon-60x60.png">
+        <link rel="apple-touch-icon" sizes="72x72" href="/apple-touch-icon-72x72.png">
+        <link rel="apple-touch-icon" sizes="76x76" href="/apple-touch-icon-76x76.png">
+        <link rel="apple-touch-icon" sizes="114x114" href="/apple-touch-icon-114x114.png">
+        <link rel="apple-touch-icon" sizes="120x120" href="/apple-touch-icon-120x120.png">
+        <link rel="apple-touch-icon" sizes="144x144" href="/apple-touch-icon-144x144.png">
+        <link rel="apple-touch-icon" sizes="152x152" href="/apple-touch-icon-152x152.png">
+        <link rel="apple-touch-icon" sizes="180x180" href="/apple-touch-icon-180x180.png">
+        <link rel="icon" type="image/png" href="/favicon-32x32.png" sizes="32x32">
+        <link rel="icon" type="image/png" href="/android-chrome-192x192.png" sizes="192x192">
+        <link rel="icon" type="image/png" href="/favicon-96x96.png" sizes="96x96">
+        <link rel="icon" type="image/png" href="/favicon-16x16.png" sizes="16x16">
+        <link rel="manifest" href="/manifest.json">
+        <link rel="mask-icon" href="/safari-pinned-tab.svg" color="#af6861">
+        <meta name="msapplication-TileColor" content="#da532c">
+        <meta name="msapplication-TileImage" content="/mstile-144x144.png">
+        <meta name="theme-color" content="#af6861">
+    </head>
+
+    <body>
+        <nav class="navbar navbar-fixed-top navbar-inverse">
+            <div class="container-fluid">
+                <div class="navbar-header">
+                    <a class="navbar-brand" href="#">
+                        <img alt="Hazel" src="../img/icon.png">
+                    </a>
+                </div>
+                <div class="collapse navbar-collapse" id="bs-example-navbar-collapse-1">
+                    <ul class="nav navbar-nav">
+                        <li><a href="/index">Packages</a></li>
+                    </ul>
+                    <div class="navbar-right">
+                        <ul class="nav navbar-nav">
+                            <li class="dropdown active">
+                                <a href="#" class="dropdown-toggle" data-toggle="dropdown">{{user.name}} <b class="caret"></b></a>
+                                <ul class="dropdown-menu" role="menu">
+                                    <li class="active"><a href="#">Settings</a></li>
+                                    <li class="divider"></li>
+                                    <li><a href="/logout">Sign out</a></li>
+                                </ul>
+                            </li>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </nav>
+
+        <div class="container">
+            <div class="row">
+                <div class="col-md-11">
+                    <h4><b>{{user.id}}</b></h4>
+                </div>
+                <div class="col-md-1">
+                    {{^edit}}<a href="/user/edit" role="button" class="btn btn-default btn-block"><i class="glyphicon glyphicon-edit"></i> Edit</a>{{/edit}}
+                </div>
+            </div>
+            <div class="delimiter"></div>
+            <div class="row">
+                <div class="well">
+                    <div class="row">
+                        <div class="col-md-12">
+                            {{^user.confirmed}}
+                                <div class="alert alert-warning alert-dismissable">
+                                    <button type="button" class="close" data-dismiss="alert" aria-hidden="true">&times;</button>
+                                    <h4>Warning!</h4>
+                                    <p>Your Account is not yet confirmed, you will not be able to generate an API Key.</p>
+                                    <p><a class="btn btn-warning" id="resend">Resend Mail</a></p>
+                                </div>
+                            {{/user.confirmed}}
+                            <div id="alert-container">
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="row">
+                        <div class="col-md-12">
+                            <label>Name</label>
+                            {{^edit}}{{user.name}}{{/edit}}{{#edit}}<input type="text" class="form-control" id="inputFullname" placeholder="Full Name" value="{{user.name}}">{{/edit}}
+                        </div>
+                    </div>
+                    <div class="delimiter"></div>
+
+                    {{#mail}}
+                        <div class="row">
+                            <div class="col-md-12">
+                                <label>Mail {{#edit}}{{#plainauth}}(Changing requires reactivation){{/plainauth}}{{/edit}}</label>
+                            </div>
+                        </div>
+                        <div class="row">
+                            {{#edit}}
+                                {{#plainauth}}
+                                    <div class="col-md-6">
+                                        <input type="text" class="form-control" id="inputMail" placeholder="Mail Address" value="{{user.mail}}">
+                                    </div>
+                                    <div class="col-md-6">
+                                        <input type="text" class="form-control" id="inputMailConfirm" placeholder="Confirm">
+                                    </div>
+                                {{/plainauth}}
+                                {{^plainauth}}
+                                    <div class="col-md-12"> Provided through {{user.provider}} </div>
+                                {{/plainauth}}
+                            {{/edit}}
+                            {{^edit}}
+                                <div class="col-md-12">{{user.mail}}</div>
+                            {{/edit}}
+                        </div>
+                        <div class="delimiter"></div>
+                    {{/mail}}
+
+                    {{#edit}}
+                        <div class="row">
+                            <div class="col-md-12">
+                                <label>Password</label>
+                            </div>
+                        </div>
+                        <div class="row">
+                            {{#plainauth}}
+                                <div class="col-md-6">
+                                    <input type="password" class="form-control" id="inputPassword" placeholder="Password">
+                                </div>
+                                <div class="col-md-6">
+                                    <input type="password" class="form-control" id="inputPasswordConfirm" placeholder="Confirm">
+                                </div>
+                            {{/plainauth}}
+                            {{^plainauth}}
+                                <div class="col-md-12"> Provided through {{user.provider}} </div>
+                            {{/plainauth}}
+                        </div>
+                        <div class="delimiter"></div>
+                    {{/edit}}
+
+                    <div class="row">
+                        <div class="col-md-8">
+                            <input type="text" class="form-control" id="apikey" readonly="readonly" value="{{user.apikey}}" placeholder="No active API Key">
+                        </div>
+                        <div class="col-md-2">
+                            <button type="button" class="btn btn-danger btn-block" id="reset">Generate New</button>
+                        </div>
+                        <div class="col-md-2">
+                            <button type="button" class="btn btn-danger btn-block" id="revoke">Revoke</button>
+                        </div>
+                    </div>
+
+                    {{#edit}}
+                        <div class="delimiter"></div>
+                        <div class="row">
+                            <div class="col-md-1"></div>
+                            <div class="col-md-4">
+                                <button class="btn btn-lg btn-warning btn-block" id="submit">Save Changes</button>
+                            </div>
+                            <div class="col-md-2"></div>
+                            <div class="col-md-4">
+                                <a href="/user" class="btn btn-lg btn-danger btn-block" role="button">Abort</a>
+                            </div>
+                            <div class="col-md-1"></div>
+                        </div>
+                    {{/edit}}
+                </div>
+            </div>
+        </div>
+
+        <script src="https://code.jquery.com/jquery-1.11.0.min.js"></script>
+        <script type="text/javascript">
+            $(function() {
+                $("#reset").click(function() {
+                    $.post("/apikey/reset", function(data) {
+                        $("#apikey")[0].value = data;
+                    }).fail(function() {
+                        $("#alert-container").html(
+                            "<div class=\"alert alert-warning alert-dismissible\" role=\"alert\"><button type=\"button\" class=\"close\" data-dismiss=\"alert\" aria-label=\"Close\"><span aria-hidden=\"true\">&times;</span></button><strong>Error!</strong> Failed to reset your api key</div>"
+                        );
+                    });
+                });
+                $("#revoke").click(function() {
+                    $.post("/apikey/revoke", function() {
+                        $("#apikey")[0].value = "";
+                    }).fail(function() {
+                        $("#alert-container").html(
+                            "<div class=\"alert alert-warning alert-dismissible\" role=\"alert\"><button type=\"button\" class=\"close\" data-dismiss=\"alert\" aria-label=\"Close\"><span aria-hidden=\"true\">&times;</span></button><strong>Error!</strong> Failed to revoke your api key</div>"
+                        );
+                    });
+                });
+                $("#submit").click(function() {
+                    {{#plainauth}}
+                        if ($("#inputPassword")[0].value != $("#inputPasswordConfirm")[0].value) {
+                            $("#alert-container").html(
+                                "<div class=\"alert alert-warning alert-dismissible\" role=\"alert\"><button type=\"button\" class=\"close\" data-dismiss=\"alert\" aria-label=\"Close\"><span aria-hidden=\"true\">&times;</span></button><strong>Error!</strong> Passwords do not match</div>"
+                            );
+                            return;
+                        }
+                        {{#mail}}
+                            if ($("#inputMailConfirm")[0].value != "" && $("#inputMail")[0].value != $("#inputMailConfirm")[0].value) {
+                                $("#alert-container").html(
+                                    "<div class=\"alert alert-warning alert-dismissible\" role=\"alert\"><button type=\"button\" class=\"close\" data-dismiss=\"alert\" aria-label=\"Close\"><span aria-hidden=\"true\">&times;</span></button><strong>Error!</strong> Mail Addresses do not match</div>"
+                                );
+                                return;
+                            }
+                        {{/mail}}
+                    {{/plainauth}}
+                    var update = {
+                        fullname: $("#inputFullname")[0].value,
+                        {{#plainauth}}
+                            {{#mail}}
+                                mail: $("#inputMailConfirm")[0].value == '' ? null : $("#inputMail")[0].value,
+                            {{/mail}}
+                            password: $("#inputPassword")[0].value,
+                        {{/plainauth}}
+                    };
+                    $.post("/user/edit", update, function() {
+                        window.location.reload(true);
+                    }).fail(function() {
+                        $("#alert-container").html(
+                            "<div class=\"alert alert-warning alert-dismissible\" role=\"alert\"><button type=\"button\" class=\"close\" data-dismiss=\"alert\" aria-label=\"Close\"><span aria-hidden=\"true\">&times;</span></button><strong>Error!</strong> Failed to update your profile information</div>"
+                        );
+                    });
+                });
+                {{^user.confirmed}}
+                    $("#resend").click(function() {
+                        $.post("/mail_confirmation/resend");
+                    });
+                {{/user.confirmed}}
+            });
+        </script>
+
+        <!-- Bootstrap -->
+        <script src="https://netdna.bootstrapcdn.com/bootstrap/3.3.0/js/bootstrap.min.js"></script>
+
+        <!-- Bootflat's JS files.-->
+        <script src="https://bootflat.github.io/bootflat/js/icheck.min.js"></script>
+        <script src="https://bootflat.github.io/bootflat/js/jquery.fs.selecter.min.js"></script>
+        <script src="https://bootflat.github.io/bootflat/js/jquery.fs.stepper.min.js"></script>
+    </body>
+</html>

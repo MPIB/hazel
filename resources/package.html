@@ -1,0 +1,481 @@
+<!-- Copyright (C) 2016  Max Planck Institute for Human Development
+
+   This program is free software: you can redistribute it and/or modify
+   it under the terms of the GNU Affero General Public License as published
+   by the Free Software Foundation, either version 3 of the License, or
+   (at your option) any later version.
+
+   This program is distributed in the hope that it will be useful,
+   but WITHOUT ANY WARRANTY; without even the implied warranty of
+   MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+   GNU Affero General Public License for more details.
+
+   You should have received a copy of the GNU Affero General Public License
+   along with this program.  If not, see <http://www.gnu.org/licenses/>.
+-->
+
+<!doctype html>
+<html>
+    <head>
+        <title>Chocolatey - {{package.id}}</title>
+        <link rel="stylesheet" href="https://netdna.bootstrapcdn.com/bootstrap/3.3.0/css/bootstrap.min.css">
+        <link rel="stylesheet" href="https://bootflat.github.io/bootflat/css/bootflat.css">
+        <link rel="stylesheet" href="/css/package.css">
+        <link rel="stylesheet" href="/css/dropzone.min.css">
+        <link rel="apple-touch-icon" sizes="57x57" href="/apple-touch-icon-57x57.png">
+        <link rel="apple-touch-icon" sizes="60x60" href="/apple-touch-icon-60x60.png">
+        <link rel="apple-touch-icon" sizes="72x72" href="/apple-touch-icon-72x72.png">
+        <link rel="apple-touch-icon" sizes="76x76" href="/apple-touch-icon-76x76.png">
+        <link rel="apple-touch-icon" sizes="114x114" href="/apple-touch-icon-114x114.png">
+        <link rel="apple-touch-icon" sizes="120x120" href="/apple-touch-icon-120x120.png">
+        <link rel="apple-touch-icon" sizes="144x144" href="/apple-touch-icon-144x144.png">
+        <link rel="apple-touch-icon" sizes="152x152" href="/apple-touch-icon-152x152.png">
+        <link rel="apple-touch-icon" sizes="180x180" href="/apple-touch-icon-180x180.png">
+        <link rel="icon" type="image/png" href="/favicon-32x32.png" sizes="32x32">
+        <link rel="icon" type="image/png" href="/android-chrome-192x192.png" sizes="192x192">
+        <link rel="icon" type="image/png" href="/favicon-96x96.png" sizes="96x96">
+        <link rel="icon" type="image/png" href="/favicon-16x16.png" sizes="16x16">
+        <link rel="manifest" href="/manifest.json">
+        <link rel="mask-icon" href="/safari-pinned-tab.svg" color="#af6861">
+        <meta name="msapplication-TileColor" content="#da532c">
+        <meta name="msapplication-TileImage" content="/mstile-144x144.png">
+        <meta name="theme-color" content="#af6861">
+    </head>
+
+    <body>
+        <nav class="navbar navbar-fixed-top navbar-inverse">
+            <div class="container-fluid">
+                <div class="navbar-header">
+                    <a class="navbar-brand" href="#">
+                        <img alt="Hazel" src="/img/icon.png">
+                    </a>
+                </div>
+                <div class="collapse navbar-collapse">
+                    <ul class="nav navbar-nav">
+                        <li><a href="/index">Packages</a></li>
+                        <li class="active"><a href="#">{{package.id}}</a></li>
+                    </ul>
+                    <div class="navbar-right">
+                        {{^loggedin}}
+                            <button type="button" class="btn btn-warning navbar-btn" data-toggle="modal" data-target="#loginModal">Sign in</button>
+                        {{/loggedin}}
+                        {{#loggedin}}
+                            <ul class="nav navbar-nav">
+                                <li class="dropdown active">
+                                    <a href="#" class="dropdown-toggle" data-toggle="dropdown">{{username}} <b class="caret"></b></a>
+                                    <ul class="dropdown-menu" role="menu">
+                                        <li><a href="/user">Settings</a></li>
+                                        <li class="divider"></li>
+                                        <li><a href="/logout">Sign out</a></li>
+                                    </ul>
+                                </li>
+                            </ul>
+                        {{/loggedin}}
+                    </div>
+                </div>
+            </div>
+        </nav>
+
+        {{^loggedin}}
+            <div class="modal fade" id="loginModal" role="dialog">
+                <div class="modal-dialog">
+                    <div class="modal-content">
+                        <div id="login-alert-container">
+                        </div>
+                        <div class="modal-header">
+                            <button type="button" class="close" data-dismiss="modal">&times;</button>
+                            <h4 class="modal-title">Login</h4>
+                        </div>
+                        <div class="modal-body">
+                            <form class="form-signin">
+                                <h2 class="form-signin-heading">Please sign in</h2>
+                                <label for="inputUsername" class="sr-only">Username</label>
+                                <input type="username" id="inputUsername" class="form-control" placeholder="Username" required autofocus>
+                                <label for="inputPassword" class="sr-only">Password</label>
+                                <input type="password" id="inputPassword" class="form-control" placeholder="Password" required>
+                                <div class="checkbox">
+                                    <label>
+                                        <input type="checkbox" id="inputRemember" value="remember-me"> Remember me
+                                    </label>
+                                </div>
+                                <button class="btn btn-lg btn-warning btn-block" id="submit" type="submit">Sign in</button>
+                             </form>
+                        </div>
+                        <div class="modal-footer">
+                            <button type="button" class="btn btn-default" data-dismiss="modal">Close</button>
+                        </div>
+                    </div>
+
+                </div>
+            </div>
+        {{/loggedin}}
+        <script src="https://code.jquery.com/jquery-1.11.0.min.js"></script>
+        {{^loggedin}}
+            <script type="text/javascript">
+                $(function() {
+                    $("#submit").click(function() {
+                        var login = {
+                            username: $("#inputUsername")[0].value,
+                            password: $("#inputPassword")[0].value,
+                            remember: $("#inputRemember")[0].checked,
+                        };
+                        $.post("/login", login, function(data) {
+                            window.location.reload(true);
+                        }).fail(function() {
+                            $("#login-alert-container").html(
+                                "<div class=\"alert alert-warning alert-dismissible\" role=\"alert\"><button type=\"button\" class=\"close\" data-dismiss=\"alert\" aria-label=\"Close\"><span aria-hidden=\"true\">&times;</span></button><strong>Error!</strong> Invalid Credentials</div>"
+                            );
+                        });
+                    });
+                    $('.form-signin').submit(function () {
+                        return false;
+                    });
+                });
+            </script>
+        {{/loggedin}}
+
+        <div class="container">
+            <div class="row">
+                {{#is_maintainer}}{{^edit}}
+                    <div class="col-md-11"></div>
+                    <div class="col-md-1">
+                        <a href="/packages/{{package.id}}/{{#versions}}{{#active}}{{version}}{{/active}}{{/versions}}/edit" role="button" class="btn btn-default btn-block"><i class="glyphicon glyphicon-edit"></i> Edit</a>
+                    </div>
+                {{/edit}}{{/is_maintainer}}
+                {{#edit}}
+                    <div class="col-md-10"></div>
+                    <div class="col-md-2">
+                        <a href="/packages/{{package.id}}/{{#versions}}{{#active}}{{version}}{{/active}}{{/versions}}" role="button" class="btn btn-default btn-block"><i class="glyphicon glyphicon-remove"></i> Close</a>
+                    </div>
+                {{/edit}}
+            </div>
+            <div class="delimiter"></div>
+            <div class="row">
+                <div class="row">
+                    <div class="col-md-9">
+                        {{#edit}}
+                            <div class="row">
+                                <div class="col-md-12">
+                                    <div id="update-alert-container">
+                                    </div>
+                                </div>
+                            </div>
+                        {{/edit}}
+
+                            <div class="row">
+                                <div class="col-md-12">
+                                    <div class="thumpnail">
+                                        <img class="icon" src="{{#versions}}{{#active}}{{icon_url}}{{/active}}{{/versions}}" alt="">
+                                    </div>
+                                    <h4>{{#versions}}{{#active}}{{title}}{{/active}}{{/versions}}</h4>
+                                </div>
+                            </div>
+                            <div class="delimiter"></div>
+
+                            <div class="row">
+                                <div class="col-md-12">
+                                    <div class="well">
+                                        <div class="row">
+                                            <div class="col-md-12">
+                                                <b>Maintainer:</b> {{package.maintainer}}
+                                            </div>
+                                        </div>
+                                        <div class="row">
+                                            <div class="col-md-12">
+                                                <b>Created:</b> {{#versions}}{{#active}}{{creation_date}}{{/active}}{{/versions}}
+                                            </div>
+                                        </div>
+                                        <div class="row">
+                                            <div class="col-md-12">
+                                                <b>Last Updated:</b> {{#versions}}{{#active}}{{updated}}{{/active}}{{/versions}}
+                                            </div>
+                                        </div>
+                                        <div class="row">
+                                            <div class="col-md-12">
+                                                <b>Times Downloaded:</b> {{#versions}}{{#active}}{{version_download_count}}{{/active}}{{/versions}}
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="delimiter"></div>
+
+                            <div class="row">
+                                <div class="col-md-12">
+                                    <div class="panel">
+                                        <ul id="myTab1" class="nav nav-tabs nav-justified">
+                                            <li class="active"><a href="#summary" data-toggle="tab">Summary</a></li>
+                                            <li><a href="#desc" data-toggle="tab">Description</a></li>
+                                            <li><a href="#relnotes" data-toggle="tab">Release Notes</a></li>
+                                        </ul>
+                                        {{^edit}}
+                                            <div id="myTabContent" class="tab-content">
+                                                <div class="tab-pane fade active in" id="summary">
+                                                    <p>{{#versions}}{{#active}}{{summary}}{{/active}}{{/versions}}</p>
+                                                </div>
+                                                <div class="tab-pane fade" id="desc">
+                                                    <p>{{#versions}}{{#active}}{{description}}{{/active}}{{/versions}}</p>
+                                                </div>
+                                                <div class="tab-pane fade" id="relnotes">
+                                                    <p>{{#versions}}{{#active}}{{release_notes}}{{/active}}{{/versions}}</p>
+                                                </div>
+                                            </div>
+                                        {{/edit}}
+
+                                        {{#edit}}
+                                            <div id="myTabContent" class="tab-content">
+                                                <div class="tab-pane fade active in" id="summary">
+                                                    <p><textarea class="form-control" id="inputSummary">{{#versions}}{{#active}}{{summary}}{{/active}}{{/versions}}</textarea>
+                                                    <button id="update_text1" type="button" class="btn btn-success">Update</button></p>
+                                                </div>
+                                                <div class="tab-pane fade" id="desc">
+                                                    <textarea class="form-control" id="inputDescription">{{#versions}}{{#active}}{{description}}{{/active}}{{/versions}}</textarea>
+                                                    <button id="update_text2" type="button" class="btn btn-success">Update</button>
+                                                </div>
+                                                <div class="tab-pane fade" id="relnotes">
+                                                    <textarea class="form-control" id="inputRelNotes">{{#versions}}{{#active}}{{release_notes}}{{/active}}{{/versions}}</textarea>
+                                                    <button id="update_text3" type="button" class="btn btn-success">Update</button>
+                                                </div>
+                                            </div>
+                                        {{/edit}}
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="delimiter"></div>
+
+                            {{^edit}}
+                                <div class="panel panel-success">
+                                    <div class="panel-heading">
+                                        <h3 class="panel-title">Download</h3>
+                                    </div>
+                                    <div class="panel-body">
+                                        <div class="row">
+                                            <div class="col-md-12">
+                                                File Size: {{#versions}}{{#active}}{{size}}{{/active}}{{/versions}} <br>
+                                            </div>
+                                        </div>
+                                        <div class="row">
+                                            <div class="col-md-12">
+                                                Hash ({{#versions}}{{#active}}{{hash_algorithm}}{{/active}}{{/versions}}): {{#versions}}{{#active}}{{hash}}{{/active}}{{/versions}}
+                                            </div>
+                                        </div>
+                                        <div class="row">
+                                            <div class="col-md-12">
+                                                <a class="btn btn-success" href="/api/v2/package/{{package.id}}/{{#versions}}{{#active}}{{version}}{{/active}}{{/versions}}" download="{{package.id}}.{{#versions}}{{#active}}{{version}}{{/active}}{{/versions}}.nupkg">Download</a>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            {{/edit}}
+                            {{#edit}}
+                                <div class="panel panel-danger">
+                                    <div class="panel-heading">
+                                        <h3 class="panel-title">Actions</h3>
+                                    </div>
+                                    <div class="panel-body">
+                                        <button id="transfer_modal" type="button" class="btn btn-warning" data-toggle="modal" data-target="#transferModal">Transfer Ownership</button>
+
+                                        <button id="delete_version_modal" type="button" class="btn btn-danger {{^api}}disabled{{/api}}" {{#api}}data-toggle="modal" data-target="#deleteVersionModal"{{/api}}>Delete Version {{^api}}(API Key missing){{/api}}</button>
+                                        <button id="delete_complete_modal" type="button" class="btn btn-danger {{^api}}disabled{{/api}}" {{#api}}data-toggle="modal" data-target="#deleteCompleteModal"{{/api}}>Delete Package {{^api}}(API Key missing){{/api}}</button>
+                                    </div>
+                                </div>
+                            {{/edit}}
+                    </div>
+                    <div class="col-md-3">
+                        <div class="row">
+                            <div class="list-group">
+                                {{#versions}}
+                                    <a href="./{{version}}" class="list-group-item {{#active}}active{{/active}}">{{version}}</a>
+                                {{/versions}}
+                            </div>
+                        </div>
+                        <div class="delimiter"></div>
+                        <div class="row">
+                            <div class="list-group">
+                                {{^edit}}
+                                    <a href="{{package.project_url}}" class="list-group-item">Project URL: {{package.project_url}}</a>
+                                    <a href="{{package.license_url}}" class="list-group-item">License URL: {{package.license_url}}</a>
+                                    <a href="{{package.project_source_url}}" class="list-group-item">Project Source URL: {{package.project_source_url}}</a>
+                                    <a href="{{package.package_source_url}}" class="list-group-item">Package Source URL: {{package.package_source_url}}</a>
+                                    <a href="{{package.docs_url}}" class="list-group-item">Docs URL: {{package.docs_url}}</a>
+                                    <a href="{{package.mailing_list_url}}" class="list-group-item">Mailing List URL: {{package.mailing_list_url}}</a>
+                                    <a href="{{package.bug_tracker_url}}" class="list-group-item">Bug Tracker URL: {{package.bug_tracker_url}}</a>
+                                    <a href="{{package.report_abuse_url}}" class="list-group-item">Report Abuse URL: {{package.report_abuse_url}}</a>
+                                {{/edit}}
+                                {{#edit}}
+                                    <li class="list-group-item">Project URL: <input id="projectUrl" type="text" class="form-control" value="{{package.project_url}}"/></li>
+                                    <li class="list-group-item">License URL: <input id="licenseUrl" type="text" class="form-control" value="{{package.license_url}}"/></li>
+                                    <li class="list-group-item">Project Source URL: <input id="projectSourceUrl" type="text" class="form-control" value="{{package.project_source_url}}"/></li>
+                                    <li class="list-group-item">Package Source URL: <input id="packageSourceUrl" type="text" class="form-control" value="{{package.package_source_url}}"/></li>
+                                    <li class="list-group-item">Docs URL: <input id="docsUrl" type="text" class="form-control" value="{{package.docs_url}}"/></li>
+                                    <li class="list-group-item">Mailing List URL: <input id="mailingListUrl" type="text" class="form-control" value="{{package.mailing_list_url}}"/></li>
+                                    <li class="list-group-item">Bug Tracker URL: <input id="bugTrackerUrl" type="text" class="form-control" value="{{package.bug_tracker_url}}"/></li>
+                                    <li class="list-group-item">Report Abuse URL: <input id="reportAbuseUrl" type="text" class="form-control" value="{{package.report_abuse_url}}"/></li>
+                                    <li class="list-group-item"><button id="update_pkg" type="button" class="btn btn-success">Update</button></li>
+                                {{/edit}}
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        {{#edit}}
+            <div class="modal fade" id="transferModal" role="dialog">
+                <div class="modal-dialog">
+                    <div class="modal-content">
+                        <div id="alert-container">
+                        </div>
+                        <div class="modal-header">
+                            <button type="button" class="close" data-dismiss="modal">&times;</button>
+                            <h4 class="modal-title">Login</h4>
+                        </div>
+                        <div class="modal-body">
+                            <form class="form-transfer">
+                                <label for="inputNewMaintainer" class="sr-only">New Maintainer</label>
+                                <input type="username" id="inputNewMaintainer" class="form-control" placeholder="Username" required autofocus>
+                            </form>
+                        </div>
+                        <div class="modal-footer">
+                            <button type="button" class="btn btn-danger btn-default" id="transfer">Transfer</button>
+                            <button type="button" class="btn btn-default" data-dismiss="modal">Close</button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            {{#api}}
+                <div class="modal fade" id="deleteVersionModal" role="dialog">
+                    <div class="modal-dialog">
+                        <div class="modal-content">
+                            <div id="alert-container">
+                            </div>
+                            <div class="modal-header">
+                                <button type="button" class="close" data-dismiss="modal">&times;</button>
+                                <h4 class="modal-title">Delete Version</h4>
+                            </div>
+                            <div class="modal-body">
+                                Are you sure you want to delete this version?
+                            </div>
+                            <div class="modal-footer">
+                                <button type="button" class="btn btn-danger" id="delete_version">Confirm</button>
+                                <button type="button" class="btn btn-default" data-dismiss="modal">Abort</button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="modal fade" id="deleteCompleteModal" role="dialog">
+                    <div class="modal-dialog">
+                        <div class="modal-content">
+                            <div id="alert-container">
+                            </div>
+                            <div class="modal-header">
+                                <button type="button" class="close" data-dismiss="modal">&times;</button>
+                                <h4 class="modal-title">Delete Package</h4>
+                            </div>
+                            <div class="modal-body">
+                                Are you sure you want to delete the whole package?
+                            </div>
+                            <div class="modal-footer">
+                                <button type="button" class="btn btn-danger" id="delete_complete">Confirm</button>
+                                <button type="button" class="btn btn-default" data-dismiss="modal">Abort</button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            {{/api}}
+        {{/edit}}
+
+        <script type="text/javascript">
+            $(function() {
+                $("#transfer").click(function() {
+                    $.get("/packages/transfer/{{package.id}}/"+$("#inputNewMaintainer")[0].value, function(data) {
+                        window.location = "/packages/{{package.id}}/{{#versions}}{{#active}}{{version}}{{/active}}{{/versions}}";
+                    }).fail(function (xhr) {
+                        $("#alert-container").html(
+                            "<div class=\"alert alert-warning alert-dismissible\" role=\"alert\"><button type=\"button\" class=\"close\" data-dismiss=\"alert\" aria-label=\"Close\"><span aria-hidden=\"true\">&times;</span></button><strong>Error!</strong> "+xhr.responseText+"</div>"
+                        );
+                    })
+                });
+                $('.form-transfer').submit(function () {
+                    return false;
+                });
+                {{#api}}
+                    $("#delete_version").click(function() {
+                        $.ajax({
+                            url: '/api/v2/package/{{package.id}}/{{#versions}}{{#active}}{{version}}{{/active}}{{/versions}}',
+                            type: 'DELETE',
+                            headers: {"X-NuGet-ApiKey": "{{key}}"},
+                            success: function(result) {
+                                window.location = "/packages/{{package.id}}";
+                            },
+                            error: function(xhr) {
+                                $("#alert-container").html(
+                                    "<div class=\"alert alert-warning alert-dismissible\" role=\"alert\"><button type=\"button\" class=\"close\" data-dismiss=\"alert\" aria-label=\"Close\"><span aria-hidden=\"true\">&times;</span></button><strong>Error!</strong> "+xhr.responseText+"</div>"
+                                );
+                            }
+                        });
+                    });
+                    $("#delete_complete").click(function() {
+                        $.ajax({
+                            url: '/api/v2/package/{{package.id}}',
+                            type: 'DELETE',
+                            headers: {"X-NuGet-ApiKey": "{{key}}"},
+                            success: function(result) {
+                                window.location = "/";
+                            },
+                            error: function(xhr) {
+                                $("#alert-container").html(
+                                    "<div class=\"alert alert-warning alert-dismissible\" role=\"alert\"><button type=\"button\" class=\"close\" data-dismiss=\"alert\" aria-label=\"Close\"><span aria-hidden=\"true\">&times;</span></button><strong>Error!</strong> A partial Deletion may have happend, please check the state of this package manually. "+xhr.responseText+"</div>"
+                                );
+                            }
+                        });
+                    });
+                {{/api}}
+                let update_text = function() {
+                    var update = {
+                        summary: $("#inputSummary")[0].value,
+                        description: $("#inputDescription")[0].value,
+                        release_notes: $("#inputRelNotes")[0].value,
+                    };
+                    $.post("/packages/{{package.id}}/{{#versions}}{{#active}}{{version}}{{/active}}{{/versions}}/edit", update, function() {
+                        window.location.reload(true);
+                    }, 'json').fail(function() {
+                        $("#alert-container").html(
+                            "<div class=\"alert alert-warning alert-dismissible\" role=\"alert\"><button type=\"button\" class=\"close\" data-dismiss=\"alert\" aria-label=\"Close\"><span aria-hidden=\"true\">&times;</span></button><strong>Error!</strong> Failed to update package information</div>"
+                        );
+                    });
+                };
+                $("#update_text1").click(update_text);
+                $("#update_text2").click(update_text);
+                $("#update_text3").click(update_text);
+                $("#update_pkg").click(function() {
+                    var update = {
+                        project_url: $("#projectUrl")[0].value,
+                        license_url: $("#licenseUrl")[0].value,
+                        project_source_url: $("#projectSourceUrl")[0].value,
+                        package_source_url: $("#packageSourceUrl")[0].value,
+                        docs_url: $("#docsUrl")[0].value,
+                        mailing_list_url: $("#mailingListUrl")[0].value,
+                        bug_tracker_url: $("#bugTrackerUrl")[0].value,
+                        report_abuse_url: $("#reportAbuseUrl")[0].value,
+                    };
+                    $.post("/packages/{{package.id}}/edit", update, function() {
+                        window.location.reload(true);
+                    }, 'json').fail(function() {
+                        $("#alert-container").html(
+                            "<div class=\"alert alert-warning alert-dismissible\" role=\"alert\"><button type=\"button\" class=\"close\" data-dismiss=\"alert\" aria-label=\"Close\"><span aria-hidden=\"true\">&times;</span></button><strong>Error!</strong> Failed to update package information</div>"
+                        );
+                    });
+                });
+            });
+        </script>
+
+        <!-- Bootstrap -->
+        <script src="https://netdna.bootstrapcdn.com/bootstrap/3.3.0/js/bootstrap.min.js"></script>
+
+        <!-- Bootflat's JS files.-->
+        <script src="https://bootflat.github.io/bootflat/js/icheck.min.js"></script>
+        <script src="https://bootflat.github.io/bootflat/js/jquery.fs.selecter.min.js"></script>
+        <script src="https://bootflat.github.io/bootflat/js/jquery.fs.stepper.min.js"></script>
+    </body>
+</html>
