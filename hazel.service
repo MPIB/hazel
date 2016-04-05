@@ -1,0 +1,10 @@
+[Unit]
+Description=Chocolatey Package Server
+After=network.target postgresql.service
+
+[Service]
+ExecStart=/usr/bin/hazel -l /var/log/hazel.log -vv -c /etc/hazel.toml
+WorkingDirectory=/var/lib/hazel
+
+[Install]
+WantedBy=multi-user.target

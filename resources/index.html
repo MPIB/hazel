@@ -1,0 +1,330 @@
+<!-- Copyright (C) 2016  Max Planck Institute for Human Development
+
+   This program is free software: you can redistribute it and/or modify
+   it under the terms of the GNU Affero General Public License as published
+   by the Free Software Foundation, either version 3 of the License, or
+   (at your option) any later version.
+
+   This program is distributed in the hope that it will be useful,
+   but WITHOUT ANY WARRANTY; without even the implied warranty of
+   MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+   GNU Affero General Public License for more details.
+
+   You should have received a copy of the GNU Affero General Public License
+   along with this program.  If not, see <http://www.gnu.org/licenses/>.
+-->
+
+<!doctype html>
+<html>
+    <head>
+        <title>Chocolatey - Packages</title>
+        <link rel="stylesheet" href="https://netdna.bootstrapcdn.com/bootstrap/3.3.0/css/bootstrap.min.css">
+        <link rel="stylesheet" href="https://bootflat.github.io/bootflat/css/bootflat.css">
+        <link rel="stylesheet" href="/css/index.css">
+        <link rel="stylesheet" href="/css/dropzone.min.css">
+        <link rel="apple-touch-icon" sizes="57x57" href="/apple-touch-icon-57x57.png">
+        <link rel="apple-touch-icon" sizes="60x60" href="/apple-touch-icon-60x60.png">
+        <link rel="apple-touch-icon" sizes="72x72" href="/apple-touch-icon-72x72.png">
+        <link rel="apple-touch-icon" sizes="76x76" href="/apple-touch-icon-76x76.png">
+        <link rel="apple-touch-icon" sizes="114x114" href="/apple-touch-icon-114x114.png">
+        <link rel="apple-touch-icon" sizes="120x120" href="/apple-touch-icon-120x120.png">
+        <link rel="apple-touch-icon" sizes="144x144" href="/apple-touch-icon-144x144.png">
+        <link rel="apple-touch-icon" sizes="152x152" href="/apple-touch-icon-152x152.png">
+        <link rel="apple-touch-icon" sizes="180x180" href="/apple-touch-icon-180x180.png">
+        <link rel="icon" type="image/png" href="/favicon-32x32.png" sizes="32x32">
+        <link rel="icon" type="image/png" href="/android-chrome-192x192.png" sizes="192x192">
+        <link rel="icon" type="image/png" href="/favicon-96x96.png" sizes="96x96">
+        <link rel="icon" type="image/png" href="/favicon-16x16.png" sizes="16x16">
+        <link rel="manifest" href="/manifest.json">
+        <link rel="mask-icon" href="/safari-pinned-tab.svg" color="#af6861">
+        <meta name="msapplication-TileColor" content="#da532c">
+        <meta name="msapplication-TileImage" content="/mstile-144x144.png">
+        <meta name="theme-color" content="#af6861">
+    </head>
+
+    <body>
+
+        <nav class="navbar navbar-fixed-top navbar-inverse">
+            <div class="container-fluid">
+                <div class="navbar-header">
+                    <a class="navbar-brand" href="#">
+                        <img alt="Hazel" src="../img/icon.png">
+                    </a>
+                </div>
+                <div class="collapse navbar-collapse" id="bs-example-navbar-collapse-1">
+                    <ul class="nav navbar-nav">
+                        <li class="active"><a href="#">Packages</a></li>
+                    </ul>
+                    <div class="navbar-right">
+                        {{^loggedin}}
+                            {{#open_for_registration}}
+                                <button type="button" class="btn btn-warning navbar-btn" data-toggle="modal" data-target="#registerModal">Register</button>
+                            {{/open_for_registration}}
+                            <button type="button" class="btn btn-warning navbar-btn" data-toggle="modal" data-target="#loginModal">Sign in</button>
+                        {{/loggedin}}
+                        {{#loggedin}}
+                            <ul class="nav navbar-nav">
+                                <li class="dropdown active">
+                                    <a href="#" class="dropdown-toggle" data-toggle="dropdown">{{username}} <b class="caret"></b></a>
+                                    <ul class="dropdown-menu" role="menu">
+                                        <li><a href="/user">Settings</a></li>
+                                        <li class="divider"></li>
+                                        <li><a href="/logout">Sign out</a></li>
+                                    </ul>
+                                </li>
+                            </ul>
+                        {{/loggedin}}
+                    </div>
+                </div>
+            </div>
+        </nav>
+
+        <script src="https://code.jquery.com/jquery-1.11.0.min.js"></script>
+        {{#loggedin}}
+        {{#api}}
+            <script src="/js/dropzone.min.js"></script>
+            <div class="modal fade" id="uploadModal" role="dialog">
+                <div class="modal-dialog">
+                    <div class="modal-content">
+                        <div class="modal-header">
+                            <button type="button" class="close" data-dismiss="modal" id="closeUpload1">&times;</button>
+                            <h4 class="modal-title">Upload</h4>
+                        </div>
+                        <div class="modal-body">
+                            <form action="/api/v2/package" class="dropzone" id="package-drop"></form>
+                        </div>
+                        <div class="modal-footer">
+                            <button type="button" class="btn btn-default" data-dismiss="modal" id="closeUpload2">Close</button>
+                        </div>
+                    </div>
+
+                </div>
+            </div>
+            <script>
+                Dropzone.options.packageDrop = {
+                    paramName: "package", // The name that will be used to transfer the file
+                    maxFilesize: {{maxfilesize}}, // MB
+                    filesizeBase: 1024,
+                    uploadMultiple: false,
+                    headers: {"X-NuGet-ApiKey": "{{key}}"},
+                    acceptedFiles: ".nupkg",
+                    init: function() {
+                        this.on("success", function(file) {
+                            $("#closeUpload1").click(function() { window.location.reload(true); });
+                            $("#closeUpload2").click(function() { window.location.reload(true); });
+                        });
+                    }
+                };
+            </script>
+        {{/api}}
+        {{/loggedin}}
+
+        {{^loggedin}}
+            {{#open_for_registration}}
+                <div class="modal fade" id="registerModal" role="dialog">
+                    <div class="modal-dialog">
+                        <div class="modal-content">
+                            <div id="register-alert-container">
+                            </div>
+                            <div class="modal-header">
+                                <button type="button" class="close" data-dismiss="modal">&times;</button>
+                                <h4 class="modal-title">Register</h4>
+                            </div>
+                            <div class="modal-body">
+                                <form class="form-register">
+                                    <h2 class="form-signin-heading">Please provide your information below</h2>
+                                    <label for="inputUsernameR" class="sr-only">Username</label>
+                                    <input type="text" id="inputUsernameR" class="form-control" placeholder="Username" required autofocus>
+                                    <label for="inputFullnameR" class="sr-only">Full Name</label>
+                                    <input type="text" id="inputFullnameR" class="form-control" placeholder="Full Name" required autofocus>
+                                    <div class="delimiter"></div>
+                                    <label for="inputMailR" class="sr-only">Mail Address</label>
+                                    <input type="text" id="inputMailR" class="form-control" placeholder="mail@example.com" required autofocus>
+                                    <label for="inputMailConfirmR" class="sr-only">Confirm Mail</label>
+                                    <input type="text" id="inputMailConfirmR" class="form-control" placeholder="Confirm Mail" required autofocus>
+                                    <div class="delimiter"></div>
+                                    <label for="inputPasswordR" class="sr-only">Password</label>
+                                    <input type="password" id="inputPasswordR" class="form-control" placeholder="Password" required>
+                                    <label for="inputPasswordConfirmR" class="sr-only">Confirm Password</label>
+                                    <input type="password" id="inputPasswordConfirmR" class="form-control" placeholder="Confirm Password" required>
+                                    <div class="delimiter"></div>
+                                    <button class="btn btn-lg btn-warning btn-block" id="register" type="submit">Register</button>
+                                 </form>
+                            </div>
+                            <div class="modal-footer">
+                                <button type="button" class="btn btn-default" data-dismiss="modal">Close</button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            {{/open_for_registration}}
+            <div class="modal fade" id="loginModal" role="dialog">
+                <div class="modal-dialog">
+                    <div class="modal-content">
+                        <div id="alert-container">
+                        </div>
+                        <div class="modal-header">
+                            <button type="button" class="close" data-dismiss="modal">&times;</button>
+                            <h4 class="modal-title">Login</h4>
+                        </div>
+                        <div class="modal-body">
+                            <form class="form-signin">
+                                <h2 class="form-signin-heading">Please sign in</h2>
+                                <label for="inputUsername" class="sr-only">Username</label>
+                                <input type="username" id="inputUsername" class="form-control" placeholder="Username" required autofocus>
+                                <label for="inputPassword" class="sr-only">Password</label>
+                                <input type="password" id="inputPassword" class="form-control" placeholder="Password" required>
+                                <div class="checkbox">
+                                    <label>
+                                        <input type="checkbox" id="inputRemember" value="remember-me"> Remember me
+                                    </label>
+                                </div>
+                                <button class="btn btn-lg btn-warning btn-block" id="submit" type="submit">Sign in</button>
+                             </form>
+                        </div>
+                        <div class="modal-footer">
+                            <button type="button" class="btn btn-default" data-dismiss="modal">Close</button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        {{/loggedin}}
+        {{^loggedin}}
+            <script type="text/javascript">
+                $(function() {
+                    $("#submit").click(function() {
+                        var login = {
+                            username: $("#inputUsername")[0].value,
+                            password: $("#inputPassword")[0].value,
+                            remember: $("#inputRemember")[0].checked,
+                        };
+                        $.post("/login", login, function(data) {
+                            window.location.reload(true);
+                        }).fail(function() {
+                            $("#alert-container").html(
+                                "<div class=\"alert alert-warning alert-dismissible\" role=\"alert\"><button type=\"button\" class=\"close\" data-dismiss=\"alert\" aria-label=\"Close\"><span aria-hidden=\"true\">&times;</span></button><strong>Error!</strong> Invalid Credentials</div>"
+                            );
+                        });
+                    });
+                    {{#open_for_registration}}
+                        $("#register").click(function() {
+                            if ($("#inputMailR")[0].value != $("#inputMailConfirmR")[0].value) {
+                                $("#register-alert-container").html(
+                                    "<div class=\"alert alert-warning alert-dismissible\" role=\"alert\"><button type=\"button\" class=\"close\" data-dismiss=\"alert\" aria-label=\"Close\"><span aria-hidden=\"true\">&times;</span></button><strong>Error!</strong> Mail Addresses do not match</div>"
+                                );
+                                return;
+                            }
+                            if ($("#inputPasswordR")[0].value != $("#inputPasswordConfirmR")[0].value) {
+                                $("#register-alert-container").html(
+                                    "<div class=\"alert alert-warning alert-dismissible\" role=\"alert\"><button type=\"button\" class=\"close\" data-dismiss=\"alert\" aria-label=\"Close\"><span aria-hidden=\"true\">&times;</span></button><strong>Error!</strong> Passwords do not match</div>"
+                                );
+                                return;
+                            }
+                            var register = {
+                                username: $("#inputUsernameR")[0].value,
+                                fullname: $("#inputFullnameR")[0].value,
+                                mail: $("#inputMailR")[0].value,
+                                password: $("#inputPasswordR")[0].value,
+                            };
+                            $.post("/register", register, function(data) {
+                                $("#registerModal").modal('hide');
+                                $("#loginModal").modal('show');
+                                {{#confirmation_required}}
+                                    $("alert-container").html(
+                                        "<div class=\"alert alert-info alert-dismissible\" role=\"alert\"><button type=\"button\" class=\"close\" data-dismiss=\"alert\" aria-label=\"Close\"><span aria-hidden=\"true\">&times;</span></button><strong>Success!</strong> Please check your mailbox and confirm your account</div>"
+                                    );
+                                {{/confirmation_required}}
+                                {{^confirmation_required}}
+                                    $("alert-container").html(
+                                        "<div class=\"alert alert-info alert-dismissible\" role=\"alert\"><button type=\"button\" class=\"close\" data-dismiss=\"alert\" aria-label=\"Close\"><span aria-hidden=\"true\">&times;</span></button><strong>Success!</strong> You may log in now.</div>"
+                                    );
+                                {{/confirmation_required}}
+                            }).fail(function(xhr) {
+                                $("#register-alert-container").html(
+                                    "<div class=\"alert alert-warning alert-dismissible\" role=\"alert\"><button type=\"button\" class=\"close\" data-dismiss=\"alert\" aria-label=\"Close\"><span aria-hidden=\"true\">&times;</span></button><strong>Error!</strong> "+xhr.responseText+"</div>"
+                                );
+                            });
+                        });
+                    {{/open_for_registration}}
+                    $('.form-signin').submit(function () {
+                        return false;
+                    });
+                    {{#open_for_registration}}
+                        $('.form-register').submit(function () {
+                            return false;
+                        });
+                    {{/open_for_registration}}
+                });
+            </script>
+        {{/loggedin}}
+
+        <div class="container">
+            {{#loggedin}}
+                {{^confirmed}}
+                    <div class="row">
+                        <div class="col-md-12">
+                            <div class="alert alert-warning alert-dismissable">
+                                <button type="button" class="close" data-dismiss="alert" aria-hidden="true">&times;</button>
+                                <h4>Warning!</h4>
+                                <p>Your Account is not yet confirmed, you will not be able to upload any packages.</p>
+                                <p><a class="btn btn-warning" id="resend">Resend Mail</a></p>
+                            </div>
+                        </div>
+                    </div>
+                {{/confirmed}}
+            {{/loggedin}}
+            {{^repo}}
+            <div class="well"><center>Looks like your repository is empty. Quick add some packages!</center></div>
+            {{/repo}}
+            <div class="list-group">
+                {{#repo}}
+                    <a href="/packages/{{id}}" class="list-group-item">
+                        <span class="badge badge-warning">{{version}}</span>
+                        <div class="thumpnail">
+                            <img class="icon" src="{{icon}}" alt="">
+                        </div>
+                        <h4 class="list-group-item-heading">{{title}}</h4>
+                        <p class="list-group-item-text">{{description}}</p>
+                    </a>
+                {{/repo}}
+            </div>
+
+            {{#loggedin}}
+            <div class="row">
+                <div class="{{#api}}col-md-10{{/api}}{{^api}}col-md-8{{/api}}">
+            {{/loggedin}}
+                    <ul class="pagination">
+                        {{#pages}}
+                           <li><a href="#" {{active}}>{{number}}</a></li>
+                        {{/pages}}
+                    </ul>
+            {{#loggedin}}
+                </div>
+                <div class="{{#api}}col-md-2{{/api}}{{^api}}col-md-4{{/api}}">
+                        <button type="button" class="btn btn-warning btn-block {{^api}}disabled{{/api}}" {{#api}}data-toggle="modal" data-target="#uploadModal"{{/api}}>Upload Package {{^api}}(API Key missing){{/api}}</button>
+                </div>
+            </div>
+            {{/loggedin}}
+        </div>
+
+        <script type="text/javascript">
+            $(function() {
+                {{#loggedin}}
+                    {{^confirmed}}
+                        $("#resend").click(function() {
+                            $.post("/mail_confirmation/resend");
+                        });
+                    {{/confirmed}}
+                {{/loggedin}}
+            });
+        </script>
+
+        <!-- Bootstrap -->
+        <script src="https://netdna.bootstrapcdn.com/bootstrap/3.3.0/js/bootstrap.min.js"></script>
+
+        <!-- Bootflat's JS files.-->
+        <script src="https://bootflat.github.io/bootflat/js/icheck.min.js"></script>
+        <script src="https://bootflat.github.io/bootflat/js/jquery.fs.selecter.min.js"></script>
+        <script src="https://bootflat.github.io/bootflat/js/jquery.fs.stepper.min.js"></script>
+    </body>
+</html>

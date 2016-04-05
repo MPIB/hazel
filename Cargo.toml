@@ -1,0 +1,120 @@
+[package]
+name = "hazel"
+description = "A Chocolatey-compatible multi-platform Package Server written in Rust"
+version = "1.0.0"
+authors = ["Victor Brekenfeld <brekenfeld@mpib-berlin.mpg.de>"]
+build = "build.rs"
+homepage = "https://github.com/MPIB/hazel"
+repository = "https://github.com/MPIB/hazel"
+readme = "README.md"
+keywords = ["nuget", "chocolatey", "package"]
+license = "AGPL-3"
+
+[build-dependencies]
+syntex = { version = "^0.31.0", optional = true }
+diesel_codegen = { version = "^0.6.0", default-features = false, features = ["postgres"] }
+
+[dependencies]
+iron = { version = "^0.3.0", features = ["ssl"] }
+hyper = "^0.8.0"
+router = "^0.1.0"
+mount = "^0.1.0"
+persistent = "^0.1.0"
+plugin = "^0.2.0"
+urlencoded = "^0.3.0"
+staticfile = "^0.2.0"
+regex = "^0.1.0"
+url = "^1.1.0"
+chrono = "^0.2.0"
+treexml = "^0.3.0"
+fs2 = "^0.2.0"
+rust-crypto = "^0.2.0"
+zip = "^0.1.0"
+lazy_static = "^0.2.0"
+params = "^0.2.0"
+semver = { git = "https://github.com/MPIB/semver.git", rev = "65820b04b0a09d35d12df81a3c45aa7564f4a491" }
+quick-error = "^1.0.0"
+clap = "^2.2.0"
+log = "^0.3.0"
+simplelog = "^0.2.0"
+mustache = "^0.7.0"
+rustc-serialize = "^0.3.0"
+lazysort = "^0.1.0"
+bcrypt = "^0.1.1"
+uuid = { version = "^0.2.0", features = ["v4"] }
+toml-config = "^0.4.0"
+toml = "^0.1.0"
+rand = "^0.3.0"
+cookie = "^0.2.0"
+cldap = { git = "https://github.com/MPIB/rust-cldap.git", rev = "cd24a03b5e92d78efe25577732385a0bf47a2360" }
+lettre = { git = "https://github.com/lettre/lettre.git", rev = "95e9f31141158866789c243bc234683fb3ff237a" }
+
+diesel = { version = "^0.6.0", default-features = false, features = ["chrono", "postgres", "large-tables"] }
+diesel_codegen = { version = "^0.6.0", default-features = false, features = ["postgres"] }
+
+r2d2 = "^0.7.0"
+r2d2-diesel = "^0.6.0"
+
+[features]
+stable = ["syntex", "diesel_codegen/with-syntex"]
+default = ["diesel_codegen/nightly", "diesel/unstable"]
+
+[package.metadata.deb]
+maintainer = "Victor Brekenfeld <brekenfeld@mpib-berlin.mpg.de>"
+copyright = "2016, Max Planck Institute for Human Development <https://www.mpib-berlin.mpg.de>"
+license_file = ["LICENSE", "3"]
+extended_description = "Hazel is a Chocolatey-compatible multi-platform Package Server written in Rust"
+depends = "openssl, libldap-2.4-2, postgresql (>= 9.4)"
+section = "web"
+priority = "optional"
+assets = [
+    ["target/release/hazel", "usr/bin/hazel", "755"],
+    ["LICENSE", "usr/share/doc/hazel/LICENSE", "644"],
+    ["README.md", "usr/share/doc/hazel/README", "644"],
+    ["hazel.toml", "etc/skel/hazel.toml", "644"],
+    ["hazel.service", "etc/systemd/system/hazel.service", "644"],
+    ["migrations/20160205110151_create_tables_v1/up.sql", "usr/share/hazel/migrations/20160205110151_create_tables_v1/", "644"],
+    ["migrations/20160205110151_create_tables_v1/down.sql", "usr/share/hazel/migrations/20160205110151_create_tables_v1/", "644"],
+    ["resources/css/dropzone.min.css", "usr/share/hazel/resources/css/", "644"],
+    ["resources/css/README.dropzone", "usr/share/hazel/resources/css/", "644"],
+    ["resources/css/LICENSE.dropzone", "usr/share/hazel/resources/css/", "644"],
+    ["resources/css/index.css", "usr/share/hazel/resources/css/", "644"],
+    ["resources/css/package.css", "usr/share/hazel/resources/css/", "644"],
+    ["resources/css/user.css", "usr/share/hazel/resources/css/", "644"],
+    ["resources/favicon/android-chrome-36x36.png", "usr/share/hazel/resources/favicon/", "644"],
+    ["resources/favicon/android-chrome-48x48.png", "usr/share/hazel/resources/favicon/", "644"],
+    ["resources/favicon/android-chrome-72x72.png", "usr/share/hazel/resources/favicon/", "644"],
+    ["resources/favicon/android-chrome-96x96.png", "usr/share/hazel/resources/favicon/", "644"],
+    ["resources/favicon/android-chrome-144x144.png", "usr/share/hazel/resources/favicon/", "644"],
+    ["resources/favicon/android-chrome-192x192.png", "usr/share/hazel/resources/favicon/", "644"],
+    ["resources/favicon/apple-touch-icon-57x57.png", "usr/share/hazel/resources/favicon/", "644"],
+    ["resources/favicon/apple-touch-icon-60x60.png", "usr/share/hazel/resources/favicon/", "644"],
+    ["resources/favicon/apple-touch-icon-72x72.png", "usr/share/hazel/resources/favicon/", "644"],
+    ["resources/favicon/apple-touch-icon-76x76.png", "usr/share/hazel/resources/favicon/", "644"],
+    ["resources/favicon/apple-touch-icon-114x114.png", "usr/share/hazel/resources/favicon/", "644"],
+    ["resources/favicon/apple-touch-icon-120x120.png", "usr/share/hazel/resources/favicon/", "644"],
+    ["resources/favicon/apple-touch-icon-144x144.png", "usr/share/hazel/resources/favicon/", "644"],
+    ["resources/favicon/apple-touch-icon-152x152.png", "usr/share/hazel/resources/favicon/", "644"],
+    ["resources/favicon/apple-touch-icon-180x180.png", "usr/share/hazel/resources/favicon/", "644"],
+    ["resources/favicon/apple-touch-icon-precomposed.png", "usr/share/hazel/resources/favicon/", "644"],
+    ["resources/favicon/apple-touch-icon.png", "usr/share/hazel/resources/favicon/", "644"],
+    ["resources/favicon/browserconfig.xml", "usr/share/hazel/resources/favicon/", "644"],
+    ["resources/favicon/favicon-16x16.png", "usr/share/hazel/resources/favicon/", "644"],
+    ["resources/favicon/favicon-32x32.png", "usr/share/hazel/resources/favicon/", "644"],
+    ["resources/favicon/favicon-96x96.png", "usr/share/hazel/resources/favicon/", "644"],
+    ["resources/favicon/favicon.ico", "usr/share/hazel/resources/favicon/", "644"],
+    ["resources/favicon/manifest.json", "usr/share/hazel/resources/favicon/", "644"],
+    ["resources/favicon/mstile-70x70.png", "usr/share/hazel/resources/favicon/", "644"],
+    ["resources/favicon/mstile-144x144.png", "usr/share/hazel/resources/favicon/", "644"],
+    ["resources/favicon/mstile-150x150.png", "usr/share/hazel/resources/favicon/", "644"],
+    ["resources/favicon/mstile-310x150.png", "usr/share/hazel/resources/favicon/", "644"],
+    ["resources/favicon/mstile-310x310.png", "usr/share/hazel/resources/favicon/", "644"],
+    ["resources/favicon/safari-pinned-tab.svg", "usr/share/hazel/resources/favicon/", "644"],
+    ["resources/img/icon.png", "usr/share/hazel/resources/img/", "644"],
+    ["resources/js/dropzone.min.js", "usr/share/hazel/resources/js/", "644"],
+    ["resources/js/README.dropzone", "usr/share/hazel/resources/js/", "644"],
+    ["resources/js/LICENSE.dropzone", "usr/share/hazel/resources/js/", "644"],
+    ["resources/index.html", "usr/share/hazel/resources/", "644"],
+    ["resources/package.html", "usr/share/hazel/resources/", "644"],
+    ["resources/user.html", "usr/share/hazel/resources/", "644"],
+]
