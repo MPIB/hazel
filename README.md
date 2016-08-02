@@ -6,6 +6,10 @@ Hazel provides a Nuget Feed aimed to be used as source for [chocolatey](https://
 It does not aim to be a feature-complete Nuget Feed nor to be 100% standard compliant (although this is desirable),
 but rather to provide everything necessary for chocolatey and possibly extend on its functionality.
 
+## Gallery
+# <img src="https://github.com/MPIB/hazel/raw/master/resources/screenshots/screenshot1.png" width="800">
+# <img src="https://github.com/MPIB/hazel/raw/master/resources/screenshots/screenshot2.png" width="800">
+
 ## Building
 ### Easy way (vagga)
 1. Get [vagga](https://github.com/tailhook/vagga)
