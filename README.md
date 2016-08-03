@@ -94,8 +94,6 @@ Additional Documentation and links to Nuget/Chocolatey can be found in our Wiki!
 Contributions are highly welcome, just make a Pull Request.
 Please keep in mind to make them modular and configurable.
 
-Contributions needs to be
-
 ## Copyright & License
 
 This Code is owned by the [Max Planck Institute for Human Development in Berlin, Germany](https://www.mpib-berlin.mpg.de/en).
