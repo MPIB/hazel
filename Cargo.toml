@@ -11,8 +11,8 @@ keywords = ["nuget", "chocolatey", "package"]
 license = "AGPL-3"
 
 [build-dependencies]
-syntex = { version = "^0.31.0", optional = true }
-diesel_codegen = { version = "^0.6.0", default-features = false, features = ["postgres"] }
+syntex = { version = "^0.38.0", optional = true }
+diesel_codegen_syntex = { version = "^0.7.0", features = ["postgres"], optional = true }
 
 [dependencies]
 iron = { version = "^0.3.0", features = ["ssl"] }
@@ -49,15 +49,15 @@ cookie = "^0.2.0"
 cldap = { git = "https://github.com/MPIB/rust-cldap.git", rev = "cd24a03b5e92d78efe25577732385a0bf47a2360" }
 lettre = { git = "https://github.com/lettre/lettre.git", rev = "95e9f31141158866789c243bc234683fb3ff237a" }
 
-diesel = { version = "^0.6.0", default-features = false, features = ["chrono", "postgres", "large-tables"] }
-diesel_codegen = { version = "^0.6.0", default-features = false, features = ["postgres"] }
+diesel = { version = "^0.7.0", default-features = false, features = ["chrono", "postgres", "large-tables"] }
+diesel_codegen = { version = "^0.7.0", features = ["postgres"], optional = true }
 
 r2d2 = "^0.7.0"
-r2d2-diesel = "^0.6.0"
+r2d2-diesel = "^0.7.0"
 
 [features]
-stable = ["syntex", "diesel_codegen/with-syntex"]
-default = ["diesel_codegen/nightly", "diesel/unstable"]
+stable = ["syntex", "diesel_codegen_syntex"]
+default = ["diesel_codegen", "diesel/unstable"]
 
 [package.metadata.deb]
 maintainer = "Victor Brekenfeld <brekenfeld@mpib-berlin.mpg.de>"

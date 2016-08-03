@@ -8,7 +8,7 @@
 #[cfg(feature = "stable")]
 mod inner {
     extern crate syntex;
-    extern crate diesel_codegen;
+    extern crate diesel_codegen_syntex as diesel_codegen;
 
     use std::env;
     use std::path::Path;
