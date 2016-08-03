@@ -125,7 +125,7 @@ impl Default for WebConfig
     fn default() -> Self {
         WebConfig {
             max_upload_filesize_mb: 10,
-            resources: String::from("."),
+            resources: String::from("./resources"),
         }
     }
 }
@@ -143,7 +143,7 @@ impl Default for BackendConfig
         BackendConfig {
             db_url: String::from("postgres://localhost/hazel"),
             storage: String::from("."),
-            migrations: String::from("."),
+            migrations: String::from("./migrations"),
         }
     }
 }
