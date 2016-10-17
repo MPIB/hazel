@@ -25,8 +25,9 @@ containers:
             - !UbuntuUniverse
             - !Install [build-essential, ca-certificates, pkg-config, file, openssl, libssl-dev, libpq-dev, libldap2-dev, liblzma-dev]
             - !TarInstall
-              url: "https://static.rust-lang.org/dist/rust-1.9.0-x86_64-unknown-linux-gnu.tar.gz"
+              url: "https://static.rust-lang.org/dist/rust-1.12.0-x86_64-unknown-linux-gnu.tar.gz"
               script: "./install.sh --prefix=/usr --components=rustc,rust-std-x86_64-unknown-linux-gnu,cargo"
+            - !Sh cargo install --git https://github.com/mmstick/cargo-deb/
 
 commands:
 
@@ -63,7 +64,6 @@ commands:
         description: Build hazel with rust stable
         container: rust
         run: |
-            cargo install --git https://github.com/mmstick/cargo-deb/
             cargo build --no-default-features --features stable --release
             cargo deb --no-build
 
@@ -75,5 +75,5 @@ commands:
                 run: |
                         touch /work/.dbcreation # Create lock file
                         while [ -f /work/.dbcreation ]; do sleep 0.2; done # Acquire lock
-                        cargo run --no-default-features --features stable --release -- -d postgres://postgres:postgr3s@localhost/hazel
+                        cargo run --no-default-features --features stable --release -- -d postgres://postgres:postgr3s@localhost/hazel -vvv
             db: *database

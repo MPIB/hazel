@@ -20,10 +20,10 @@ use iron::mime::Mime;
 pub fn index(req: &mut Request) -> IronResult<Response> {
     let base_url = {
         let url = &req.url;
-        if (&*url.scheme == "http" && url.port == 80) || (&*url.scheme == "https" && url.port == 443) {
-            format!("{}://{}", url.scheme, url.host)
+        if (&*url.scheme() == "http" && url.port() == 80) || (&*url.scheme() == "https" && url.port() == 443) {
+            format!("{}://{}", url.scheme(), url.host())
         } else {
-            format!("{}://{}:{}", url.scheme, url.host, url.port)
+            format!("{}://{}:{}", url.scheme(), url.host(), url.port())
         }
     };
     Ok(Response::with((status::Ok, format!(

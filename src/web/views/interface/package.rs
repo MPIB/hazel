@@ -13,7 +13,7 @@
 // You should have received a copy of the GNU Affero General Public License
 // along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-use iron::{Request, Response, IronResult};
+use iron::{Url, Request, Response, IronResult};
 use iron::status;
 use iron::mime::Mime;
 use iron::modifiers::Redirect;
@@ -108,16 +108,16 @@ pub fn package_newestver(req: &mut Request) -> IronResult<Response> {
         Ok(pkg) => match pkg.newest_version(&*connection) {
             Ok(pkgver) => pkgver.version(),
             Err(_) => return Ok(Response::with((status::TemporaryRedirect, Redirect({
-                let mut base = req.url.clone();
-                base.path.clear();
-                base
+                let mut base = req.url.clone().into_generic_url();
+                base.path_segments_mut().unwrap().clear();
+                Url::from_generic_url(base).unwrap()
             })))),
         },
         //most likely the package was not found (TODO match diesel Error as well)
         Err(BackendError::DBError(_)) => return Ok(Response::with((status::TemporaryRedirect, Redirect({
-            let mut base = req.url.clone();
-            base.path.clear();
-            base
+            let mut base = req.url.clone().into_generic_url();
+            base.path_segments_mut().unwrap().clear();
+            Url::from_generic_url(base).unwrap()
         })))),
         Err(err) => {
             error!("{:?}", err);
@@ -126,17 +126,17 @@ pub fn package_newestver(req: &mut Request) -> IronResult<Response> {
     };
 
     Ok(Response::with((status::TemporaryRedirect, Redirect({
-        let mut base = req.url.clone();
-        base.path.push(format!("{}", version));
-        base
+        let mut base = req.url.clone().into_generic_url();
+        base.path_segments_mut().unwrap().push(&format!("{}", version));
+        Url::from_generic_url(base).unwrap()
     }))))
 }
 
 pub fn package(req: &mut Request) -> IronResult<Response> {
     let ref id = req.extensions.get::<Router>().unwrap().find("id").unwrap();
     let ref version = req.extensions.get::<Router>().unwrap().find("version").unwrap();
-    let edit = match req.url.path.iter().last() {
-        Some(x) if x == "edit" => true,
+    let edit = match req.url.path().last() {
+        Some(x) if *x == "edit" => true,
         _ => false,
     };
 
@@ -153,9 +153,9 @@ pub fn package(req: &mut Request) -> IronResult<Response> {
         Ok(pkg) => pkg,
         //most likely the package was not found (TODO match diesel Error as well)
         Err(BackendError::DBError(_)) => return Ok(Response::with((status::TemporaryRedirect, Redirect({
-            let mut base = req.url.clone();
-            base.path.clear();
-            base
+            let mut base = req.url.clone().into_generic_url();
+            base.path_segments_mut().unwrap().clear();
+            Url::from_generic_url(base).unwrap()
         })))),
         Err(err) => {
             error!("{:?}", err);

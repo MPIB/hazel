@@ -31,7 +31,7 @@ lazy_static! {
 
 pub fn package(req: &mut Request) -> IronResult<Response> {
 
-    let url = req.url.path.pop().unwrap();
+    let url = req.url.path().pop().unwrap();
     let parse = match PKG_DESC.captures(&url) {
         Some(matched) => matched,
         None => return Ok(Response::with(status::NotFound)),
@@ -49,10 +49,10 @@ pub fn package(req: &mut Request) -> IronResult<Response> {
 
     let base_url = {
         let url = &req.url;
-        if (&*url.scheme == "http" && url.port == 80) || (&*url.scheme == "https" && url.port == 443) {
-            format!("{}://{}", url.scheme, url.host)
+        if (&*url.scheme() == "http" && url.port() == 80) || (&*url.scheme() == "https" && url.port() == 443) {
+            format!("{}://{}", url.scheme(), url.host())
         } else {
-            format!("{}://{}:{}", url.scheme, url.host, url.port)
+            format!("{}://{}:{}", url.scheme(), url.host(), url.port())
         }
     };
     let connection_pool = req.extensions.get::<Read<ConnectionPoolKey>>().unwrap();

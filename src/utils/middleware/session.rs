@@ -68,8 +68,8 @@ impl AroundMiddleware for SessionManager
                                                     req.extensions.insert::<Authenticated>((true, Some(user_cookie.value.clone())));
                                                     match handler.handle(req) {
                                                         Ok(resp) => {
-                                                            match req.url.path.pop() {
-                                                                Some(ref x) if x == "logout" => {},
+                                                            match req.url.path().pop() {
+                                                                Some(x) if x == "logout" => {},
                                                                 _ => {
                                                                     //renew cookie, if set previously
                                                                     match session_info.remember {
@@ -86,8 +86,8 @@ impl AroundMiddleware for SessionManager
                                                                     session_cookie.path = Some(String::from("/"));
                                                                     user_cookie.path = Some(String::from("/"));
 
-                                                                    session_cookie.domain = Some(req.url.host.to_string());
-                                                                    user_cookie.domain = Some(req.url.host.to_string());
+                                                                    session_cookie.domain = Some(req.url.host().to_string());
+                                                                    user_cookie.domain = Some(req.url.host().to_string());
 
                                                                     jar.add(session_cookie);
                                                                     jar.add(user_cookie);

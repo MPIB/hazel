@@ -13,7 +13,7 @@
 // You should have received a copy of the GNU Affero General Public License
 // along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-use iron::{Request, Response, IronResult};
+use iron::{Url, Request, Response, IronResult};
 use iron::status;
 use iron::modifiers::Redirect;
 use persistent::{Read, Write};
@@ -43,9 +43,9 @@ pub fn logout(req: &mut Request) -> IronResult<Response>
                         Ok(mut session_store) => {
                             session_store.remove(username);
                             Ok(Response::with((status::TemporaryRedirect, Redirect({
-                                let mut base = req.url.clone();
-                                base.path = vec![String::from("index")];
-                                base
+                                let mut base = req.url.clone().into_generic_url();
+                                base.path_segments_mut().unwrap().clear().push("index");
+                                Url::from_generic_url(base).unwrap()
                             }))))
                         },
                         Err(_) => Ok(Response::with((status::InternalServerError, "Error, please try again later"))),
@@ -53,16 +53,16 @@ pub fn logout(req: &mut Request) -> IronResult<Response>
                     None => Ok(Response::with((status::InternalServerError, "Error, please try again later"))),
                 },
                 _ => Ok(Response::with((status::TemporaryRedirect, Redirect({
-                        let mut base = req.url.clone();
-                        base.path = vec![String::from("index")];
-                        base
+                    let mut base = req.url.clone().into_generic_url();
+                    base.path_segments_mut().unwrap().clear().push("index");
+                    Url::from_generic_url(base).unwrap()
                     })))),
             }
         },
         _ => Ok(Response::with((status::TemporaryRedirect, Redirect({
-                let mut base = req.url.clone();
-                base.path = vec![String::from("index")];
-                base
+                let mut base = req.url.clone().into_generic_url();
+                base.path_segments_mut().unwrap().clear().push("index");
+                Url::from_generic_url(base).unwrap()
             }))))
     }
 }

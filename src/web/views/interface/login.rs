@@ -82,8 +82,8 @@ pub fn login(req: &mut Request) -> IronResult<Response> {
                 user_cookie.max_age = Some((session_info.expires - UTC::now()).num_seconds() as u64);
                 session_cookie.path = Some(String::from("/"));
                 user_cookie.path = Some(String::from("/"));
-                session_cookie.domain = Some(req.url.host.to_string());
-                user_cookie.domain = Some(req.url.host.to_string());
+                session_cookie.domain = Some(req.url.host().to_string());
+                user_cookie.domain = Some(req.url.host().to_string());
 
                 jar.add(user_cookie);
                 jar.add(session_cookie);

@@ -13,7 +13,7 @@
 // You should have received a copy of the GNU Affero General Public License
 // along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-use iron::{Iron, Request, Response, IronResult};
+use iron::{Url, Iron, Request, Response, IronResult};
 use iron::middleware::Chain;
 use iron::headers::UserAgent;
 use iron::typemap::Key;
@@ -24,6 +24,7 @@ use mount::Mount;
 use router::Router;
 use persistent::{Read, Write};
 use staticfile::Static;
+use url::Url as RealUrl;
 
 use r2d2::Pool;
 use diesel::pg::PgConnection;
@@ -94,42 +95,42 @@ pub fn start(pool: Pool<ConnectionManager<PgConnection>>, storage: Storage) -> L
                     Ok(Response::with(status::Ok))
                 } else {
                     Ok(Response::with((status::TemporaryRedirect, Redirect({
-                        let mut base = req.url.clone();
-                        base.path.push(String::from("index"));
-                        base
+                        let mut base: RealUrl = req.url.clone().into_generic_url();
+                        base.path_segments_mut().unwrap().push("index");
+                        Url::from_generic_url(base).unwrap()
                     }))))
                 }
             }
             redirect
-        });
+        }, "root");
         interface.get("/index", {
             fn redirect(req: &mut Request) -> IronResult<Response> {
                 Ok(Response::with((status::TemporaryRedirect, Redirect({
-                    let mut base = req.url.clone();
-                    base.path.push(String::from("1"));
-                    base
+                    let mut base: RealUrl = req.url.clone().into_generic_url();
+                    base.path_segments_mut().unwrap().push("index/1");
+                    Url::from_generic_url(base).unwrap()
                 }))))
             }
             redirect
-        });
-        interface.get("/index/:page", interface_index);
-        interface.get("/user", interface_user);
-        interface.get("/user/edit", interface_user);
-        interface.post("/user/edit", interface_user_update);
-        interface.post("/register", interface_register);
-        interface.post("/login", interface_login);
-        interface.get("/logout", interface_logout);
-        interface.post("/apikey/reset", interface_apikey);
-        interface.post("/apikey/revoke", interface_apikey);
-        interface.get("/packages/:id", interface_package_newestver);
-        interface.get("/packages/:id/:version", interface_package);
-        interface.get("/packages/:id/:version/edit", interface_package);
-        interface.post("/packages/:id/edit", interface_pkg_update);
-        interface.post("/packages/:id/:version/edit", interface_pkgver_update);
-        interface.get("/packages/transfer/:id/:new_maintainer", interface_transfer);
+        }, "index");
+        interface.get("/index/:page", interface_index, "index_page");
+        interface.get("/user", interface_user, "user");
+        interface.get("/user/edit", interface_user, "user_edit");
+        interface.post("/user/edit", interface_user_update, "update_user");
+        interface.post("/register", interface_register, "register");
+        interface.post("/login", interface_login, "login");
+        interface.get("/logout", interface_logout, "logout");
+        interface.post("/apikey/reset", interface_apikey, "reset_apikey");
+        interface.post("/apikey/revoke", interface_apikey, "revoke_apikey");
+        interface.get("/packages/:id", interface_package_newestver, "pkg");
+        interface.get("/packages/:id/:version", interface_package, "pkgversion");
+        interface.get("/packages/:id/:version/edit", interface_package, "update_pkg");
+        interface.post("/packages/:id/edit", interface_pkg_update, "edit_pkg");
+        interface.post("/packages/:id/:version/edit", interface_pkgver_update, "edit_pkgver");
+        interface.get("/packages/transfer/:id/:new_maintainer", interface_transfer, "transfer");
         if CONFIG.auth.mail.is_some() {
-            interface.post("/mail_confirmation/resend", interface_mail_resend);
-            interface.get("/mail_confirmation/:key", interface_mail_confirmation);
+            interface.post("/mail_confirmation/resend", interface_mail_resend, "mail_resend");
+            interface.get("/mail_confirmation/:key", interface_mail_confirmation, "mail_confirm");
         }
 
         mount.mount("/css/", Static::new(PathBuf::from(CONFIG.web.resources.clone()).join("css")));
@@ -173,36 +174,36 @@ pub fn start(pool: Pool<ConnectionManager<PgConnection>>, storage: Storage) -> L
     {
         let mut feed = Router::new();
 
-        feed.get("", index);
-        feed.get("$metadata", metadata);
+        feed.get("", index, "index");
+        feed.get("$metadata", metadata, "metadata");
 
         // get all package(s)
-        feed.get("Packages()", packages);
-        feed.get("Packages", packages);
+        feed.get("Packages()", packages, "packages()");
+        feed.get("Packages", packages, "packages");
 
         // download specific package
-        feed.get("package/:id/:version", download);
+        feed.get("package/:id/:version", download, "download");
 
         // add/delete package
-        feed.post("package", upload);
-        feed.put("package", upload);
-        feed.delete("package/:id/:version", delete);
-        feed.delete("package/:id", delete);
+        feed.post("package", upload, "upload_post");
+        feed.put("package", upload, "upload_put");
+        feed.delete("package/:id/:version", delete, "delete_pkgver");
+        feed.delete("package/:id", delete, "delete_pkg");
 
         // functions aka filter packages
-        feed.get("FindPackagesById()", packagesbyid);
-        feed.get("FindPackagesById", packagesbyid);
-        feed.get("GetUpdates()", updates);
-        feed.get("GetUpdates", updates);
-        feed.get("Search()", search);
-        feed.get("Search", search);
+        feed.get("FindPackagesById()", packagesbyid, "pkgbyid()");
+        feed.get("FindPackagesById", packagesbyid, "pkgbyid");
+        feed.get("GetUpdates()", updates, "updates()");
+        feed.get("GetUpdates", updates, "updates");
+        feed.get("Search()", search, "search()");
+        feed.get("Search", search, "search");
 
         // tab-completion
-        feed.get("package-ids", complete_ids);
-        feed.get("package-versions/:id", complete_ver);
+        feed.get("package-ids", complete_ids, "pkgids");
+        feed.get("package-versions/:id", complete_ver, "pkgverids");
 
         //Package(Id=':id',Version=':version')
-        feed.get("*", package); //Router does not handle this correctly
+        feed.get("*", package, "pkg()"); //Router does not handle this correctly
 
         mount.mount("/api/v2/", feed);
     }

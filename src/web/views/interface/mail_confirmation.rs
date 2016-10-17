@@ -13,7 +13,7 @@
 // You should have received a copy of the GNU Affero General Public License
 // along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-use iron::{Request, Response, IronResult};
+use iron::{Url, Request, Response, IronResult};
 use iron::status;
 use iron::modifiers::Redirect;
 use persistent::Read;
@@ -40,9 +40,9 @@ pub fn mail_confirmation(req: &mut Request) -> IronResult<Response>
 
     match User::confirm_mail(&*connection, String::from(*key)) {
         Ok(_) => Ok(Response::with((status::TemporaryRedirect, Redirect({
-            let mut base = req.url.clone();
-            base.path.clear();
-            base
+            let mut base = req.url.clone().into_generic_url();
+            base.path_segments_mut().unwrap().clear();
+            Url::from_generic_url(base).unwrap()
         })))),
         Err(BackendError::DBError(DBError::NotFound)) => Ok(Response::with(status::NotFound)),
         Err(_) => Ok(Response::with(status::InternalServerError)),

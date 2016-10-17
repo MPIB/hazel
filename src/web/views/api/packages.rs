@@ -26,10 +26,10 @@ use ::web::backend::xml::ToNugetFeedXml;
 pub fn packages(req: &mut Request) -> IronResult<Response> {
     let base_url = {
         let url = &req.url;
-        if (&*url.scheme == "http" && url.port == 80) || (&*url.scheme == "https" && url.port == 443) {
-            format!("{}://{}", url.scheme, url.host)
+        if (&*url.scheme() == "http" && url.port() == 80) || (&*url.scheme() == "https" && url.port() == 443) {
+            format!("{}://{}", url.scheme(), url.host())
         } else {
-            format!("{}://{}:{}", url.scheme, url.host, url.port)
+            format!("{}://{}:{}", url.scheme(), url.host(), url.port())
         }
     };
     let connection_pool = req.extensions.get::<Read<ConnectionPoolKey>>().unwrap();

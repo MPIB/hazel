@@ -65,8 +65,8 @@ pub fn user(req: &mut Request) -> IronResult<Response> {
     let rendering = UserPage {
         user: user,
         mail: mail,
-        edit: match req.url.path.iter().last() {
-            Some(x) if x == "edit" => true,
+        edit: match req.url.path().last() {
+            Some(x) if *x == "edit" => true,
             _ => false,
         },
         plainauth: plain,

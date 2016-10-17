@@ -13,23 +13,16 @@
 // You should have received a copy of the GNU Affero General Public License
 // along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-use iron::{BeforeMiddleware, IronError, IronResult, Request};
+use iron::{Url, BeforeMiddleware, IronError, IronResult, Request};
 
 pub struct PathNormalizer;
 impl BeforeMiddleware for PathNormalizer
 {
     fn before(&self, req: &mut Request) -> IronResult<()>
     {
-        if req.url.path.len() > 1 {
-            let first_elem_empty = &*req.url.path.first().unwrap() == "";
-            if first_elem_empty {
-                req.url.path.remove(0);
-            }
-            let last_elem = req.url.path.pop().unwrap();
-            if &*last_elem != "" {
-                req.url.path.push(last_elem);
-            }
-        }
+        let mut url = req.url.clone().into_generic_url();
+        url.path_segments_mut().unwrap().pop_if_empty();
+        req.url = Url::from_generic_url(url).unwrap();
         Ok(())
     }
     fn catch(&self, _: &mut Request, _: IronError) -> IronResult<()>
