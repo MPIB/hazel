@@ -67,7 +67,7 @@ pub fn package(req: &mut Request) -> IronResult<Response> {
 
     let package = match PackageVersion::get(&*connection, id, &match Version::parse(version) {
         Ok(ver) => ver,
-        Err(_) => return Ok(Response::with((status::BadRequest, "Version value invalid"))),
+        Err(_) => return Ok(Response::with((status::NotFound, "Version value invalid"))),
     }) {
         Ok(package) => package,
         Err(_) => {

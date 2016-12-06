@@ -338,7 +338,7 @@ impl ToNugetFeedXml for PackageVersion
 
             let mut is_prerelease = Element::new("d:IsPrerelease");
             is_prerelease.attributes.insert(String::from("m:type"), String::from("Edm.Boolean"));
-            is_absolute_latest_version.text = Some(String::from(
+            is_prerelease.text = Some(String::from(
                 match self.version().is_prerelease() {
                     true => "true",
                     false => "false",
