@@ -38,19 +38,19 @@ impl NugetToSemver for VersionReq
             Some(x) => x,
         };
 
-        let range_start = caps.at(1);
-        let ver1 = caps.at(2);
-        let ver1_major = caps.at(3);
-        let ver1_minor = caps.at(4);
-        let ver1_patch = caps.at(5);
-        let ver1_pre = caps.at(6);
-        let comma = caps.at(7);
-        let ver2 = caps.at(8);
-        let ver2_major = caps.at(9);
-        let ver2_minor = caps.at(10);
-        let ver2_patch = caps.at(11);
-        let ver2_pre = caps.at(12);
-        let range_stop = caps.at(13);
+        let range_start = caps.get(1);
+        let ver1 = caps.get(2);
+        let ver1_major = caps.get(3);
+        let ver1_minor = caps.get(4);
+        let ver1_patch = caps.get(5);
+        let ver1_pre = caps.get(6);
+        let comma = caps.get(7);
+        let ver2 = caps.get(8);
+        let ver2_major = caps.get(9);
+        let ver2_minor = caps.get(10);
+        let ver2_patch = caps.get(11);
+        let ver2_pre = caps.get(12);
+        let range_stop = caps.get(13);
 
         let mut builder_min = PredBuilder::new();
         let mut builder_max = PredBuilder::new();
@@ -59,19 +59,19 @@ impl NugetToSemver for VersionReq
         if range_start.is_some() != range_stop.is_some() {
             return Err(ReqParseError::InvalidVersionRequirement);
         }
-        if comma.is_some() && ver1.is_some() && ver2.is_none() && range_stop.is_some() && range_stop.unwrap() == "]" {
+        if comma.is_some() && ver1.is_some() && ver2.is_none() && range_stop.is_some() && range_stop.unwrap().as_str() == "]" {
             return Err(ReqParseError::InvalidVersionRequirement);
         }
-        if comma.is_some() && ver1.is_none() && ver2.is_some() && range_start.is_some() && range_start.unwrap() == "[" {
+        if comma.is_some() && ver1.is_none() && ver2.is_some() && range_start.is_some() && range_start.unwrap().as_str() == "[" {
             return Err(ReqParseError::InvalidVersionRequirement);
         }
 
-        match range_start {
+        match range_start.map(|x| x.as_str()) {
             None => try!(builder_min.set_op(Op::GtEq)),
             Some("[") => {
                 match comma {
                     Some(_) => try!(builder_min.set_op(Op::GtEq)),
-                    None => match range_stop {
+                    None => match range_stop.map(|x| x.as_str()) {
                         Some("]") => try!(builder_max.set_op(Op::Ex)),
                         Some(")") => return Err(ReqParseError::InvalidVersionRequirement),
                         _ => unreachable!(),
@@ -84,21 +84,21 @@ impl NugetToSemver for VersionReq
         let pred_min = match ver1 {
             None => None,
             Some(_) => {
-                builder_min.major = ver1_major.and_then(|x| x.parse::<u64>().ok());
-                builder_min.minor = ver1_minor.and_then(|x| x.parse::<u64>().ok());
-                builder_min.patch = ver1_patch.and_then(|x| x.parse::<u64>().ok());
+                builder_min.major = ver1_major.and_then(|x| x.as_str().parse::<u64>().ok());
+                builder_min.minor = ver1_minor.and_then(|x| x.as_str().parse::<u64>().ok());
+                builder_min.patch = ver1_patch.and_then(|x| x.as_str().parse::<u64>().ok());
                 builder_min.has_pre = ver1_pre.is_some();
                 if ver1_pre.is_some() {
-                    builder_min.pre.push(match ver1_pre.unwrap().parse().ok() {
+                    builder_min.pre.push(match ver1_pre.unwrap().as_str().parse().ok() {
                         Some(n) => Identifier::Numeric(n),
-                        None => Identifier::AlphaNumeric(String::from(ver1_pre.unwrap())),
+                        None => Identifier::AlphaNumeric(String::from(ver1_pre.unwrap().as_str())),
                     })
                 }
                 Some(try!(builder_min.build()))
             }
         };
 
-        match range_stop {
+        match range_stop.map(|x| x.as_str()) {
             None | Some("]") => try!(builder_max.set_op(Op::LtEq)),
             Some(")") => try!(builder_max.set_op(Op::Lt)),
             _ => unreachable!(),
@@ -106,14 +106,14 @@ impl NugetToSemver for VersionReq
         let pred_max = match ver2 {
             None => None,
             Some(_) => {
-                builder_max.major = ver2_major.and_then(|x| x.parse::<u64>().ok());
-                builder_max.minor = ver2_minor.and_then(|x| x.parse::<u64>().ok());
-                builder_max.patch = ver2_patch.and_then(|x| x.parse::<u64>().ok());
+                builder_max.major = ver2_major.and_then(|x| x.as_str().parse::<u64>().ok());
+                builder_max.minor = ver2_minor.and_then(|x| x.as_str().parse::<u64>().ok());
+                builder_max.patch = ver2_patch.and_then(|x| x.as_str().parse::<u64>().ok());
                 builder_max.has_pre = ver2_pre.is_some();
                 if ver2_pre.is_some() {
-                    builder_max.pre.push(match ver2_pre.unwrap().parse().ok() {
+                    builder_max.pre.push(match ver2_pre.unwrap().as_str().parse().ok() {
                         Some(n) => Identifier::Numeric(n),
-                        None => Identifier::AlphaNumeric(String::from(ver2_pre.unwrap())),
+                        None => Identifier::AlphaNumeric(String::from(ver2_pre.unwrap().as_str())),
                     })
                 }
                 Some(try!(builder_max.build()))

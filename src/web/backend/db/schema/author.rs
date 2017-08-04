@@ -13,11 +13,19 @@
 // You should have received a copy of the GNU Affero General Public License
 // along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-#[derive(Queryable, Debug, PartialEq, Eq)]
-#[insertable_into(author)]
+use diesel::prelude::*;
+use diesel::pg::Pg;
+use diesel::{insert, delete};
+
+use ::utils::error::BackendResult;
+use ::web::backend::db::{author, packageversion, packageversion_has_author};
+use ::web::backend::db::schema::{PackageVersion, PackageVersionHasAuthor};
+
+#[derive(Queryable, Debug, PartialEq, Eq, Insertable)]
+#[table_name="author"]
 pub struct Author
 {
-    id: String
+    pub id: String
 }
 
 impl Author
@@ -77,15 +85,11 @@ impl Author
     {
         match PackageVersionHasAuthor::get(connection, version, &self) {
             Ok(has) => {
-                match connection.transaction(move || {
+                connection.transaction(move || {
                     try!(has.delete(connection));
                     if try!(self.belongs(connection)).len() == 0 { try!(self.delete(connection)) };
                     Ok(())
-                }) {
-                    Ok(()) => Ok(()),
-                    Err(TransactionError::CouldntCreateTransaction(err)) => Err(BackendError::DBError(err)),
-                    Err(TransactionError::UserReturnedError(err)) => Err(err),
-                }
+                })
             },
             Err(x) => Err(x),
         }

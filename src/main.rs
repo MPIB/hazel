@@ -13,11 +13,9 @@
 // You should have received a copy of the GNU Affero General Public License
 // along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-#![cfg_attr(feature = "default", feature(custom_derive, plugin, custom_attribute))]
-#![cfg_attr(feature = "default", plugin(diesel_codegen))]
-
 extern crate iron;
 #[macro_use] extern crate hyper;
+extern crate hyper_native_tls;
 extern crate mount;
 extern crate router;
 extern crate urlencoded;
@@ -26,6 +24,7 @@ extern crate plugin;
 extern crate staticfile;
 extern crate cookie;
 #[macro_use] extern crate diesel;
+#[macro_use] extern crate diesel_codegen;
 extern crate r2d2;
 extern crate r2d2_diesel;
 extern crate regex;
@@ -38,11 +37,11 @@ extern crate zip;
 extern crate params;
 extern crate semver;
 extern crate mustache;
-extern crate rustc_serialize;
 extern crate lazysort;
 extern crate bcrypt;
 extern crate uuid;
-extern crate toml_config;
+extern crate serde;
+#[macro_use] extern crate serde_derive;
 extern crate toml;
 extern crate cldap;
 extern crate rand;
@@ -59,7 +58,7 @@ pub mod web;
 use diesel::migrations;
 use diesel::pg::PgConnection;
 use r2d2_diesel::ConnectionManager;
-use simplelog::{TermLogger, SimpleLogger, FileLogger, CombinedLogger, LogLevelFilter, SharedLogger};
+use simplelog::{TermLogger, SimpleLogger, WriteLogger, CombinedLogger, LogLevelFilter, SharedLogger, Config as LogConfig};
 
 use web::server;
 use web::backend::Storage;
@@ -82,16 +81,17 @@ fn main() {
         3 => LogLevelFilter::Debug,
         4 | _ => LogLevelFilter::Trace,
     };
+    let log_conf = LogConfig::default();
 
     let mut logger: Vec<Box<SharedLogger>> = vec![];
     if !CONFIG.log.quiet {
-        logger.push(match TermLogger::new(verbosity) {
+        logger.push(match TermLogger::new(verbosity, log_conf) {
             Some(termlogger) => termlogger,
-            None => SimpleLogger::new(verbosity),
+            None => SimpleLogger::new(verbosity, log_conf),
         });
     }
     match CONFIG.log.logfile {
-        Some(ref path) => logger.push(FileLogger::new(cmp::max(verbosity, LogLevelFilter::Info), File::create(path).unwrap())),
+        Some(ref path) => logger.push(WriteLogger::new(cmp::max(verbosity, LogLevelFilter::Info), log_conf, File::create(path).unwrap())),
         None => {},
     }
     CombinedLogger::init(logger).unwrap();

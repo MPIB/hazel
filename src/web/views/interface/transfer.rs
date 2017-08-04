@@ -16,7 +16,6 @@
 use iron::{Request, Response, IronResult};
 use iron::status;
 use persistent::Read;
-use plugin::Pluggable;
 use router::Router;
 use ::utils::error::BackendError;
 

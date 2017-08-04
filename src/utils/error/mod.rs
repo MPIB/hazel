@@ -84,7 +84,7 @@ mod backend_error {
 }
 
 mod mail_error {
-    use lettre::transport::error::Error as MailerError;
+    use lettre::transport::smtp::error::Error as SmtpError;
 
     quick_error! {
         #[derive(Debug)]
@@ -98,8 +98,8 @@ mod mail_error {
             UnknownAuthenticationMechanism {
                 display("The specified authentication mechanism is unknown. Please use either of \"CramMd5\" or \"Plain\"")
             }
-            MailerError(err: MailerError) {
-                from(e: MailerError) -> (e.into())
+            SmtpError(err: SmtpError) {
+                from(e: SmtpError) -> (e.into())
             }
         }
     }

@@ -13,18 +13,25 @@
 // You should have received a copy of the GNU Affero General Public License
 // along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-#[derive(Queryable, Debug)]
-#[insertable_into(package_has_tag)]
-#[changeset_for(package_has_tag)]
-struct PackageHasTag
+use diesel::prelude::*;
+use diesel::pg::Pg;
+use diesel::{insert, delete};
+
+use ::utils::error::BackendResult;
+use ::web::backend::db::package_has_tag;
+use ::web::backend::db::schema::{Package, Tag};
+
+#[derive(Queryable, Debug, Insertable, Identifiable, AsChangeset)]
+#[table_name="package_has_tag"]
+pub struct PackageHasTag
 {
-    id: String,
-    package_id: String,
+    pub id: String,
+    pub package_id: String,
 }
 
 impl PackageHasTag
 {
-    fn new<C: Connection<Backend=Pg>>(connection: &C, package: &Package, tag: &Tag) -> BackendResult<Self>
+    pub fn new<C: Connection<Backend=Pg>>(connection: &C, package: &Package, tag: &Tag) -> BackendResult<Self>
     {
         let this = PackageHasTag {
             id: tag.id.clone(),
@@ -33,7 +40,7 @@ impl PackageHasTag
         err!(insert(&this).into(package_has_tag::table).get_result(connection))
     }
 
-    fn get<C: Connection<Backend=Pg>>(connection: &C, package: &Package, tag: &Tag) -> BackendResult<Self>
+    pub fn get<C: Connection<Backend=Pg>>(connection: &C, package: &Package, tag: &Tag) -> BackendResult<Self>
     {
         err!(package_has_tag::table.filter(
                 package_has_tag::id.eq(&tag.id)
@@ -41,7 +48,7 @@ impl PackageHasTag
             ).first(connection))
     }
 
-    fn delete<C: Connection<Backend=Pg>>(self, connection: &C) -> BackendResult<()>
+    pub fn delete<C: Connection<Backend=Pg>>(self, connection: &C) -> BackendResult<()>
     {
         err_discard!(delete(package_has_tag::table.filter(
             package_has_tag::id.eq(self.id)

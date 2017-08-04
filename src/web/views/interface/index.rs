@@ -32,7 +32,7 @@ lazy_static! {
     static ref TEMPLATE: Template = compile_path(PathBuf::from(CONFIG.web.resources.clone()).join("index.html")).unwrap();
 }
 
-#[derive(RustcEncodable)]
+#[derive(Serialize)]
 struct Index {
     repo: Vec<Package>,
     pages: Vec<Page>,
@@ -44,14 +44,14 @@ struct Index {
     api: Option<API>,
 }
 
-#[derive(RustcEncodable)]
+#[derive(Serialize)]
 struct API
 {
     key: String,
     maxfilesize: u32,
 }
 
-#[derive(RustcEncodable)]
+#[derive(Serialize)]
 struct Package {
     id: String,
     version: String,
@@ -60,7 +60,7 @@ struct Package {
     description: String,
 }
 
-#[derive(RustcEncodable)]
+#[derive(Serialize)]
 struct Page {
     active: String,
     number: usize,

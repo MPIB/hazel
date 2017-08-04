@@ -38,14 +38,14 @@ pub fn apikey(req: &mut Request) -> IronResult<Response>
             match User::get(&*connection, username) {
                 Ok(mut user) => {
                     if user.confirmed() {
-                        match req.url.path.iter().last() {
-                            Some(x) if x == "reset" => {
+                        match req.url.path().iter().last() {
+                            Some(x) if x == &"reset" => {
                                 match user.generate_apikey(&*connection) {
                                     Ok(user) => Ok(Response::with((Status::Ok, user.apikey().unwrap()))),
                                     _ => Ok(Response::with(Status::InternalServerError)),
                                 }
                             },
-                            Some(x) if x == "revoke" => {
+                            Some(x) if x == &"revoke" => {
                                 match user.revoke_apikey(&*connection) {
                                     Ok(_) => Ok(Response::with(Status::Ok)),
                                     _ => Ok(Response::with(Status::InternalServerError)),

@@ -16,12 +16,13 @@
 use iron::{Request, Response, IronResult, Plugin};
 use iron::headers::SetCookie;
 use iron::modifiers::Header;
-use cookie::*;
 use iron::status::{self, Status};
+use cookie::{Cookie, CookieJar, Key as CookieKey};
 use persistent::{Read, Write};
 use uuid::Uuid;
 use params::{Params, Value};
-use chrono::*;
+use chrono::Duration;
+use chrono::prelude::*;
 
 use std::str::FromStr;
 
@@ -67,29 +68,35 @@ pub fn login(req: &mut Request) -> IronResult<Response> {
                 let session_id = Uuid::new_v4().simple().to_string();
                 let session_info = SessionInfo {
                     expires: match remember {
-                        true  => UTC::now() + Duration::weeks(1),
-                        false => UTC::now() + Duration::hours(1),
+                        true  => Utc::now() + Duration::weeks(1),
+                        false => Utc::now() + Duration::hours(1),
                     },
                     session_id: session_id.clone(),
                     remember: remember,
                 };
-                let root_jar = CookieJar::new(&*CONFIG.auth.cookie_key.as_bytes());
-                let jar = root_jar.encrypted();
-                let mut user_cookie = Cookie::new(String::from("hazel_username"), username.clone());
-                let mut session_cookie = Cookie::new(String::from("hazel_sessionid"), session_id);
+                let mut root_jar = CookieJar::new();
 
-                session_cookie.max_age = Some((session_info.expires - UTC::now()).num_seconds() as u64);
-                user_cookie.max_age = Some((session_info.expires - UTC::now()).num_seconds() as u64);
-                session_cookie.path = Some(String::from("/"));
-                user_cookie.path = Some(String::from("/"));
-                session_cookie.domain = Some(req.url.host.to_string());
-                user_cookie.domain = Some(req.url.host.to_string());
+                {
+                    let mut jar = root_jar.private(&CookieKey::from_master(&*CONFIG.auth.cookie_key.as_bytes()));
 
-                jar.add(user_cookie);
-                jar.add(session_cookie);
+                    let mut user_cookie = Cookie::new(String::from("hazel_username"), username.clone());
+                    let mut session_cookie = Cookie::new(String::from("hazel_sessionid"), session_id);
+
+                    session_cookie.set_max_age(session_info.expires.signed_duration_since(Utc::now()));
+                    user_cookie.set_max_age(session_info.expires.signed_duration_since(Utc::now()));
+                    session_cookie.set_path(String::from("/"));
+                    user_cookie.set_path(String::from("/"));
+                    if let Some(repr) = req.url.as_ref().host_str() {
+                        session_cookie.set_domain(repr.to_string());
+                        user_cookie.set_domain(repr.to_string());
+                    }
+
+                    jar.add(user_cookie);
+                    jar.add(session_cookie);
+                }
 
                 session_store.insert(username, session_info);
-                Ok(Response::with((Status::Ok, Header(SetCookie::from_cookie_jar(&root_jar)), "success")))
+                Ok(Response::with((Status::Ok, Header(SetCookie(root_jar.delta().map(|cookie| cookie.to_string()).collect())), "success")))
             } else {
                 Ok(Response::with(Status::Unauthorized))
             }

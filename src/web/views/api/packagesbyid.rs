@@ -17,7 +17,7 @@ use iron::{Request, Response, IronResult};
 use iron::status;
 use iron::mime::Mime;
 use persistent::Read;
-use chrono::{UTC, TimeZone};
+use chrono::prelude::*;
 use plugin::Pluggable;
 use params::{Params, Value};
 use treexml::{Document, Element};
@@ -37,10 +37,10 @@ pub fn packagesbyid(req: &mut Request) -> IronResult<Response> {
 
     let base_url = {
         let url = &req.url;
-        if (&*url.scheme == "http" && url.port == 80) || (&*url.scheme == "https" && url.port == 443) {
-            format!("{}://{}", url.scheme, url.host)
+        if (&*url.scheme() == "http" && url.port() == 80) || (&*url.scheme() == "https" && url.port() == 443) {
+            format!("{}://{}", url.scheme(), url.as_ref().host_str().unwrap())
         } else {
-            format!("{}://{}:{}", url.scheme, url.host, url.port)
+            format!("{}://{}:{}", url.scheme(), url.as_ref().host_str().unwrap(), url.port())
         }
     };
     let connection_pool = req.extensions.get::<Read<ConnectionPoolKey>>().unwrap();
@@ -81,7 +81,7 @@ pub fn packagesbyid(req: &mut Request) -> IronResult<Response> {
     id.text = Some(format!("{}/api/v2/FindPackagesById", base_url));
     feed.children.push(id);
 
-    let mut last_updated = UTC.ymd(1900, 1, 1).and_hms(0, 0, 0).naive_utc();
+    let mut last_updated = Utc.ymd(1900, 1, 1).and_hms(0, 0, 0).naive_utc();
     for pkg in packages.iter()
     {
         if pkg.last_updated() > &last_updated {

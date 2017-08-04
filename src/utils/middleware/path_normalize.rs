@@ -20,16 +20,7 @@ impl BeforeMiddleware for PathNormalizer
 {
     fn before(&self, req: &mut Request) -> IronResult<()>
     {
-        if req.url.path.len() > 1 {
-            let first_elem_empty = &*req.url.path.first().unwrap() == "";
-            if first_elem_empty {
-                req.url.path.remove(0);
-            }
-            let last_elem = req.url.path.pop().unwrap();
-            if &*last_elem != "" {
-                req.url.path.push(last_elem);
-            }
-        }
+        req.url.as_mut().path_segments_mut().unwrap().pop_if_empty();
         Ok(())
     }
     fn catch(&self, _: &mut Request, _: IronError) -> IronResult<()>

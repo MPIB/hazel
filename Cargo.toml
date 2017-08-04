@@ -1,63 +1,56 @@
 [package]
 name = "hazel"
 description = "A Chocolatey-compatible multi-platform Package Server written in Rust"
-version = "1.0.2"
+version = "1.1.0"
 authors = ["Victor Brekenfeld <brekenfeld@mpib-berlin.mpg.de>"]
-build = "build.rs"
 homepage = "https://github.com/MPIB/hazel"
 repository = "https://github.com/MPIB/hazel"
 readme = "README.md"
 keywords = ["nuget", "chocolatey", "package"]
 license = "AGPL-3"
 
-[build-dependencies]
-syntex = { version = "^0.38.0", optional = true }
-diesel_codegen_syntex = { version = "^0.7.0", features = ["postgres"], optional = true }
-
 [dependencies]
-iron = { version = "^0.3.0", features = ["ssl"] }
-hyper = "^0.8.0"
-router = "^0.1.0"
-mount = "^0.1.0"
-persistent = "^0.1.0"
-plugin = "^0.2.0"
-urlencoded = "^0.3.0"
-staticfile = "^0.2.0"
-regex = "^0.1.0"
-url = "^1.1.0"
-chrono = "^0.2.0"
-treexml = "^0.3.0"
-fs2 = "^0.2.0"
-rust-crypto = "^0.2.0"
+iron = { version = "^0.5.1" }
+hyper = "^0.10.0"
+hyper-native-tls = "^0.2.4"
+router = "^0.5.1"
+mount = "^0.3.0"
+persistent = "^0.3.0"
+plugin = "^0.2.6"
+urlencoded = "^0.5.0"
+staticfile = "^0.4.0"
+regex = "^0.2.2"
+url = "^1.5.1"
+chrono = "^0.4.0"
+treexml = "^0.6.1"
+fs2 = "^0.4.2"
+rust-crypto = "^0.2.36"
 zip = "^0.1.0"
-lazy_static = "^0.2.0"
-params = "^0.2.0"
+lazy_static = "^0.2.5"
+params = "^0.6.0"
 semver = { git = "https://github.com/MPIB/semver.git", rev = "65820b04b0a09d35d12df81a3c45aa7564f4a491" }
-quick-error = "^1.0.0"
-clap = "^2.2.0"
-log = "^0.3.0"
-simplelog = "^0.2.0"
-mustache = "^0.7.0"
-rustc-serialize = "^0.3.0"
-lazysort = "^0.1.0"
-bcrypt = "^0.1.1"
-uuid = { version = "^0.2.0", features = ["v4"] }
-toml-config = "^0.4.0"
-toml = "^0.1.0"
-rand = "^0.3.0"
-cookie = "^0.2.0"
+quick-error = "^1.2.0"
+clap = "=2.26.0"
+log = "^0.3.8"
+simplelog = "^0.4.2"
+mustache = { git = "https://github.com/erickt/rust-mustache.git", rev = "7ee5f45b09e8440b23a705da88a52c85d357ba16" }
+lazysort = "^0.1.1"
+bcrypt = "^0.1.3"
+uuid = { version = "^0.5.1", features = ["v4"] }
+rand = "^0.3.16"
+cookie = { version =  "^0.9.1", features = ["secure"] }
 cldap = { git = "https://github.com/MPIB/rust-cldap.git", rev = "cd24a03b5e92d78efe25577732385a0bf47a2360" }
-lettre = { git = "https://github.com/lettre/lettre.git", rev = "95e9f31141158866789c243bc234683fb3ff237a" }
+lettre = "0.6.2"
 
-diesel = { version = "^0.7.0", default-features = false, features = ["chrono", "postgres", "large-tables"] }
-diesel_codegen = { version = "^0.7.0", features = ["postgres"], optional = true }
+diesel = { version = "^0.15.2", features = ["chrono", "postgres", "large-tables"] }
+diesel_codegen = { version = "^0.15.0", default-features = false, features = ["postgres"] }
 
-r2d2 = "^0.7.0"
-r2d2-diesel = "^0.7.0"
+r2d2 = "^0.7.3"
+r2d2-diesel = "^0.15.0"
 
-[features]
-stable = ["syntex", "diesel_codegen_syntex"]
-default = ["diesel_codegen", "diesel/unstable"]
+serde = "1.0.11"
+serde_derive = "1.0.11"
+toml = "0.4"
 
 [package.metadata.deb]
 maintainer = "Victor Brekenfeld <brekenfeld@mpib-berlin.mpg.de>"

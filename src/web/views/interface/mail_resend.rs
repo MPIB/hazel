@@ -16,7 +16,6 @@
 use iron::{Request, Response, IronResult};
 use iron::status::Status;
 use persistent::Read;
-use plugin::Pluggable;
 
 use ::web::backend::db::User;
 use ::web::server::ConnectionPoolKey;

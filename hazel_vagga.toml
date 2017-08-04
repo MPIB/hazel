@@ -1,0 +1,14 @@
+[backend]
+db_url = "postgres://postgres:postgr3s@localhost/hazel"
+migrations = "/work/migrations"
+storage = "/work/.vagga/storage"
+
+[web]
+max_upload_filesize_mb = 10
+resources = "/work/resources/"
+
+[server]
+port = 8080
+
+[auth]
+superuser_password = "test"

@@ -13,13 +13,44 @@
 // You should have received a copy of the GNU Affero General Public License
 // along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-#[derive(Queryable, Debug)]
-#[insertable_into(packageversion)]
-#[changeset_for(packageversion, treat_none_as_null="true")]
+use crypto::digest::Digest;
+use crypto::sha2::Sha256;
+
+use chrono::prelude::*;
+use diesel::prelude::*;
+use diesel::pg::Pg;
+use diesel::{insert, update, delete};
+
+use semver::{Version, VersionReq};
+
+use treexml::Document as XmlDocument;
+use treexml::Element;
+
+use zip::{ZipArchive, ZipWriter, CompressionMethod};
+use zip::result::ZipError;
+
+use std::cmp::Ordering;
+use std::iter::FlatMap;
+use std::io::{self, Read, Seek, SeekFrom};
+use std::fs;
+use std::str::FromStr;
+use std::vec::IntoIter;
+
+use ::web::backend::version::*;
+use ::web::backend::xml::*;
+use ::utils::error::{BackendError, BackendResult};
+use ::web::backend::db::{dependency, package, packageversion, author, packageversion_has_author, packageversion_has_dependency};
+use ::web::backend::db::schema::{Package, Tag, User, Dependency, Author, PackageVersionHasAuthor, PackageVersionHasDependency};
+use ::web::backend::Storage;
+
+
+#[derive(Queryable, Identifiable, AsChangeset, Insertable, Debug)]
+#[table_name = "packageversion"]
+#[changeset_options(treat_none_as_null="true")]
 pub struct PackageVersion
 {
-    id: String,
-    version: String,
+    pub id: String,
+    pub version: String,
     creation_date: NaiveDateTime,
     pub title: Option<String>,
     pub summary: Option<String>,
@@ -102,10 +133,10 @@ impl PackageVersion
         let mut this = PackageVersion {
             id: id.clone(),
             version: format!("{}", version),
-            creation_date: UTC::now().naive_utc(),
+            creation_date: Utc::now().naive_utc(),
             title: None,
             summary: None,
-            updated: UTC::now().naive_utc(),
+            updated: Utc::now().naive_utc(),
             description: None,
             version_download_count: 0,
             release_notes: None,
@@ -209,10 +240,7 @@ impl PackageVersion
             Ok(x) => Ok(x),
             Err(x) => {
                 storage.delete(&this);
-                match x {
-                    TransactionError::CouldntCreateTransaction(err) => Err(BackendError::DBError(err)),
-                    TransactionError::UserReturnedError(err) => Err(err),
-                }
+                Err(x)
             },
         }
     }
@@ -265,20 +293,17 @@ impl PackageVersion
                 )).set(self).get_result(connection))
         }) {
             Ok(x) => Ok(x),
-            Err(TransactionError::CouldntCreateTransaction(err)) => Err(BackendError::DBError(err)),
-            Err(TransactionError::UserReturnedError(err)) => match err {
-                BackendError::CriticalUpdateFailure(x) => {
-                    try!(self.delete(connection, storage));
-                    Err(BackendError::CriticalUpdateFailure(x))
-                },
-                x => Err(x),
+            x @ Err(BackendError::CriticalUpdateFailure(_)) => {
+                try!(self.delete(connection, storage));
+                x
             },
+            Err(x) => Err(x),
         }
     }
 
     pub fn delete<C: Connection<Backend=Pg>>(&self, connection: &C, storage: &Storage) -> BackendResult<()>
     {
-        match connection.transaction(|| {
+        connection.transaction(|| {
             {
                 let blocking_dependencies = try!(self.blocking_dependencies(connection));
                 if blocking_dependencies.len() > 0 {
@@ -315,11 +340,7 @@ impl PackageVersion
             }
             storage.delete(&self);
             Ok(())
-        }) {
-            Ok(()) => Ok(()),
-            Err(TransactionError::CouldntCreateTransaction(err)) => Err(BackendError::DBError(err)),
-            Err(TransactionError::UserReturnedError(err)) => Err(err),
-        }
+        })
     }
 
     pub fn package<C: Connection<Backend=Pg>>(&self, connection: &C) -> BackendResult<Package>
@@ -383,12 +404,7 @@ impl PackageVersion
             }).load(connection)));
         }
 
-        fn internal_helper_into_iter(entry: Vec<Dependency>) -> IntoIter<Dependency>
-        {
-            entry.into_iter()
-        }
-
-        Ok(iterators.into_iter().flat_map(internal_helper_into_iter))
+        Ok(iterators.into_iter().flat_map(Vec::into_iter))
     }
 
     pub fn currently_dependending_package_versions<C: Connection<Backend=Pg>>(&self, connection: &C) -> BackendResult<Vec<Dependency>>

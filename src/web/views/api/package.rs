@@ -26,12 +26,12 @@ use ::web::backend::db::PackageVersion;
 use ::web::backend::xml::ToNugetFeedXml;
 
 lazy_static! {
-    static ref PKG_DESC: Regex = Regex::with_size_limit(8192, r#"^Packages\(Id='(?P<id>.*)'\s*,Version='(?P<version>.*)'\)$"#).unwrap();
+    static ref PKG_DESC: Regex = Regex::new(r#"^Packages\(Id='(?P<id>.*)'\s*,Version='(?P<version>.*)'\)$"#).unwrap();
 }
 
 pub fn package(req: &mut Request) -> IronResult<Response> {
 
-    let url = req.url.path.pop().unwrap();
+    let url = req.url.path().pop().unwrap();
     let parse = match PKG_DESC.captures(&url) {
         Some(matched) => matched,
         None => return Ok(Response::with(status::NotFound)),
@@ -49,10 +49,10 @@ pub fn package(req: &mut Request) -> IronResult<Response> {
 
     let base_url = {
         let url = &req.url;
-        if (&*url.scheme == "http" && url.port == 80) || (&*url.scheme == "https" && url.port == 443) {
-            format!("{}://{}", url.scheme, url.host)
+        if (&*url.scheme() == "http" && url.port() == 80) || (&*url.scheme() == "https" && url.port() == 443) {
+            format!("{}://{}", url.scheme(), url.as_ref().host_str().unwrap())
         } else {
-            format!("{}://{}:{}", url.scheme, url.host, url.port)
+            format!("{}://{}:{}", url.scheme(), url.as_ref().host_str().unwrap(), url.port())
         }
     };
     let connection_pool = req.extensions.get::<Read<ConnectionPoolKey>>().unwrap();
@@ -65,7 +65,7 @@ pub fn package(req: &mut Request) -> IronResult<Response> {
         }
     };
 
-    let package = match PackageVersion::get(&*connection, id, &match Version::parse(version) {
+    let package = match PackageVersion::get(&*connection, id.as_str(), &match Version::parse(version.as_str()) {
         Ok(ver) => ver,
         Err(_) => return Ok(Response::with((status::NotFound, "Version value invalid"))),
     }) {

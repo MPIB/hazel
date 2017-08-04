@@ -17,7 +17,6 @@ use iron::{Request, Response, IronResult};
 use iron::status;
 use iron::modifiers::Redirect;
 use persistent::Read;
-use plugin::Pluggable;
 use router::Router;
 
 use ::web::server::ConnectionPoolKey;
@@ -41,7 +40,7 @@ pub fn mail_confirmation(req: &mut Request) -> IronResult<Response>
     match User::confirm_mail(&*connection, String::from(*key)) {
         Ok(_) => Ok(Response::with((status::TemporaryRedirect, Redirect({
             let mut base = req.url.clone();
-            base.path.clear();
+            base.as_mut().path_segments_mut().unwrap().clear();
             base
         })))),
         Err(BackendError::DBError(DBError::NotFound)) => Ok(Response::with(status::NotFound)),

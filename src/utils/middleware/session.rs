@@ -13,14 +13,17 @@
 // You should have received a copy of the GNU Affero General Public License
 // along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-use iron::{AroundMiddleware, Request, Handler, Set};
-use iron::headers::{Cookie, SetCookie};
+use iron::{AroundMiddleware, IronResult, Request, Response, Handler, Set};
+use iron::headers::{Cookie as CookieHeader, SetCookie};
 use iron::modifiers::Header;
 use iron::typemap::Key;
 
 use persistent::Write;
 
-use chrono::*;
+use chrono::Duration;
+use chrono::prelude::*;
+
+use cookie::{Cookie, CookieJar, Key as CookieKey};
 
 use ::utils::CONFIG;
 use ::web::server::SessionStoreKey;
@@ -33,9 +36,91 @@ impl Key for Authenticated {
 #[derive(Clone)]
 pub struct SessionInfo
 {
-    pub expires: DateTime<UTC>,
+    pub expires: DateTime<Utc>,
     pub session_id: String,
     pub remember: bool,
+}
+
+fn handle(req: &mut Request, handler: &Box<Handler>) -> IronResult<Response, > {
+    req.extensions.insert::<Authenticated>((false, None));
+
+    //parse cookies, set auth status
+    let cookies = req.headers.get::<CookieHeader>().cloned();
+    match cookies {
+        Some(cookies) => {
+            let mut root_jar = CookieJar::new();
+            for cookie in cookies.0 {
+                if let Ok(parsed_cookie) = Cookie::parse(cookie) {
+                    root_jar.add_original(parsed_cookie);
+                }
+            }
+
+            {
+                let mut jar = root_jar.private(&CookieKey::from_master(&*CONFIG.auth.cookie_key.as_bytes()));
+
+                match jar.get("hazel_username") {
+                    Some(mut user_cookie) => {
+                        match jar.get("hazel_sessionid") {
+                            Some(mut session_cookie) => {
+                                let session_store_mutex = req.extensions.get::<Write<SessionStoreKey>>().unwrap().clone();
+                                let maybe_session_info = {
+                                    let session_store = session_store_mutex.lock().unwrap();
+                                    session_store.get(user_cookie.value()).cloned()
+                                };
+                                match maybe_session_info {
+                                    Some(mut session_info) => {
+                                        if session_info.session_id == session_cookie.value() {
+                                            if session_info.expires >= Utc::now() {
+                                                req.extensions.insert::<Authenticated>((true, Some(user_cookie.value().to_string())));
+                                                match req.url.path().pop() {
+                                                    Some(ref x) if x == &"logout" => {
+                                                        jar.remove(session_cookie);
+                                                    },
+                                                    _ => {
+                                                        //renew cookie, if set previously
+                                                        match session_info.remember {
+                                                            true  => session_info.expires = Utc::now() + Duration::weeks(1),
+                                                            false => session_info.expires = Utc::now() + Duration::hours(1),
+                                                        };
+
+                                                        let mut session_store = session_store_mutex.lock().unwrap();
+                                                        session_store.insert(user_cookie.value().to_string(), session_info.clone());
+
+                                                        session_cookie.set_max_age(session_info.expires.signed_duration_since(Utc::now()));
+                                                        user_cookie.set_max_age(session_info.expires.signed_duration_since(Utc::now()));
+
+                                                        session_cookie.set_path(String::from("/"));
+                                                        user_cookie.set_path(String::from("/"));
+
+                                                        if let Some(repr) = req.url.as_ref().host_str() {
+                                                            session_cookie.set_domain(repr.to_string());
+                                                            user_cookie.set_domain(repr.to_string());
+                                                        }
+
+                                                        jar.add(session_cookie);
+                                                        jar.add(user_cookie);
+                                                    }
+                                                }
+                                            }
+                                        }
+                                    },
+                                    None => {},
+                                }
+                            },
+                            None => {},
+                        }
+                    },
+                    None => {},
+                }
+            }
+
+            match handler.handle(req) {
+                Ok(resp) => Ok(resp.set(Header(SetCookie(root_jar.delta().map(|cookie| cookie.to_string()).collect())))),
+                x => x,
+            }
+        },
+        None => handler.handle(req),
+    }
 }
 
 pub struct SessionManager;
@@ -44,75 +129,7 @@ impl AroundMiddleware for SessionManager
     fn around(self, handler: Box<Handler>) -> Box<Handler>
     {
         Box::new(move |req: &mut Request| {
-            req.extensions.insert::<Authenticated>((false, None));
-
-            //parse cookies, set auth status
-            let cookies = req.headers.get::<Cookie>().cloned();
-            match cookies {
-                Some(header) => {
-                    let root_jar = header.to_cookie_jar(&*CONFIG.auth.cookie_key.as_bytes());
-                    let jar = root_jar.encrypted();
-                    match jar.find("hazel_username") {
-                        Some(mut user_cookie) => {
-                            match jar.find("hazel_sessionid") {
-                                Some(mut session_cookie) => {
-                                    let session_store_mutex = req.extensions.get::<Write<SessionStoreKey>>().unwrap().clone();
-                                    let maybe_session_info = {
-                                        let session_store = session_store_mutex.lock().unwrap();
-                                        session_store.get(&user_cookie.value).cloned()
-                                    };
-                                    match maybe_session_info {
-                                        Some(mut session_info) => {
-                                            if session_info.session_id == session_cookie.value {
-                                                if session_info.expires >= UTC::now() {
-                                                    req.extensions.insert::<Authenticated>((true, Some(user_cookie.value.clone())));
-                                                    match handler.handle(req) {
-                                                        Ok(resp) => {
-                                                            match req.url.path.pop() {
-                                                                Some(ref x) if x == "logout" => {},
-                                                                _ => {
-                                                                    //renew cookie, if set previously
-                                                                    match session_info.remember {
-                                                                        true  => session_info.expires = UTC::now() + Duration::weeks(1),
-                                                                        false => session_info.expires = UTC::now() + Duration::hours(1),
-                                                                    };
-
-                                                                    let mut session_store = session_store_mutex.lock().unwrap();
-                                                                    session_store.insert(user_cookie.value.clone(), session_info.clone());
-
-                                                                    session_cookie.max_age = Some((session_info.expires - UTC::now()).num_seconds() as u64);
-                                                                    user_cookie.max_age = Some((session_info.expires - UTC::now()).num_seconds() as u64);
-
-                                                                    session_cookie.path = Some(String::from("/"));
-                                                                    user_cookie.path = Some(String::from("/"));
-
-                                                                    session_cookie.domain = Some(req.url.host.to_string());
-                                                                    user_cookie.domain = Some(req.url.host.to_string());
-
-                                                                    jar.add(session_cookie);
-                                                                    jar.add(user_cookie);
-                                                                    return Ok(resp.set(Header(SetCookie::from_cookie_jar(&root_jar))));
-                                                                }
-                                                            }
-                                                        },
-                                                        Err(x) => return Err(x),
-                                                    }
-                                                }
-                                            }
-                                        },
-                                        None => {},
-                                    }
-                                },
-                                None => {},
-                            }
-                        },
-                        None => {},
-                    }
-                },
-                None => {},
-            };
-
-            handler.handle(req)
+            handle(req, &handler)
         })
     }
 }

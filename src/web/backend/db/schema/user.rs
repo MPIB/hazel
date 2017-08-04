@@ -13,18 +13,40 @@
 // You should have received a copy of the GNU Affero General Public License
 // along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
+use bcrypt;
+
+use cldap::RustLDAP;
+use cldap::codes::scopes::LDAP_SCOPE_SUBTREE;
+
+use diesel::prelude::*;
+use diesel::pg::Pg;
+use diesel::{insert, update, delete};
+
+use lettre::email::EmailBuilder;
+use lettre::transport::EmailTransport;
+use lettre::transport::smtp::*;
+use lettre::transport::smtp::authentication::*;
+
+use uuid::Uuid;
+
+use std::ptr;
+
+use ::utils::CONFIG;
+use ::utils::error::{BackendError, BackendResult, MailError, LDAPError, LoginError};
+use ::web::backend::db::hazeluser;
+use ::web::backend::db::schema::Package;
+
 pub enum Authentication {
     LDAP,
     //Plain(password: String)
     Plain(String)
 }
 
-#[derive(Queryable, Debug, RustcEncodable)]
-#[insertable_into(hazeluser)]
-#[changeset_for(hazeluser)]
+#[derive(Queryable, Debug, Serialize, Identifiable, Insertable, AsChangeset)]
+#[table_name = "hazeluser"]
 pub struct User
 {
-    id: String,
+    pub id: String,
     pub name: String,
     mail: Option<String>,
     mail_key: Option<String>,
@@ -80,7 +102,7 @@ impl User
     {
         match &*self.provider {
             "Plain" => {
-                match connection.transaction(|| {
+                connection.transaction(|| {
                     self.mail = Some(mail);
                     self.confirmed = CONFIG.auth.mail.is_none();
                     self.mail_key = Some(Uuid::new_v4().simple().to_string());
@@ -91,11 +113,7 @@ impl User
                         Err(MailError::ConfigMissing) => Ok(update),
                         Err(x) => Err(x),
                     })
-                }) {
-                    Ok(x) => Ok(x),
-                    Err(TransactionError::CouldntCreateTransaction(err)) => Err(BackendError::DBError(err)),
-                    Err(TransactionError::UserReturnedError(err)) => Err(err),
-                }
+                })
             },
             _ => Err(BackendError::InvalidProviderForOP)
         }
@@ -196,17 +214,13 @@ impl User
 
     pub fn delete<C: Connection<Backend=Pg>>(&self, connection: &C) -> BackendResult<()>
     {
-        match connection.transaction(|| {
+        connection.transaction(|| {
             let admin = try!(User::get(connection, &String::from("admin")));
             for mut pkg in try!(Package::all(connection)).into_iter().filter(|package| package.maintainer == self.id) {
                 try!(pkg.update_maintainer(connection, &admin));
             }
             err_discard!(delete(hazeluser::table.filter(hazeluser::id.eq(&self.id))).execute(connection))
-        }) {
-            Ok(_) => Ok(()),
-            Err(TransactionError::CouldntCreateTransaction(err)) => Err(BackendError::DBError(err)),
-            Err(TransactionError::UserReturnedError(err)) => Err(err),
-        }
+        })
     }
 
     pub fn update<C: Connection<Backend=Pg>>(&self, connection: &C) -> BackendResult<Self>
@@ -269,7 +283,7 @@ impl User
                 if User::ldap_common_name(&username).is_ok() {
                     Err(BackendError::UserAlreadyExists)
                 } else {
-                    match connection.transaction(|| {
+                    connection.transaction(|| {
                         let mut user = try!(User::new(connection, username, fullname, Some(mail), Authentication::Plain(try!(bcrypt::hash(&*password, bcrypt::DEFAULT_COST))), None));
                         if CONFIG.auth.mail.is_some() {
                             user = try!(user.set_confirmed(connection, false));
@@ -278,11 +292,7 @@ impl User
                             user = try!(user.set_confirmed(connection, true));
                         }
                         Ok(user)
-                    }) {
-                        Ok(user) => Ok(user),
-                        Err(TransactionError::CouldntCreateTransaction(err)) => Err(BackendError::DBError(err)),
-                        Err(TransactionError::UserReturnedError(err)) => Err(err),
-                    }
+                    })
                 }
             }
         }

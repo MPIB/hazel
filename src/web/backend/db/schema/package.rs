@@ -13,12 +13,21 @@
 // You should have received a copy of the GNU Affero General Public License
 // along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-#[derive(Queryable, Debug, RustcEncodable)]
-#[insertable_into(package)]
-#[changeset_for(package, treat_none_as_null="true")]
+use diesel::prelude::*;
+use diesel::pg::Pg;
+use diesel::{update, delete};
+use lazysort::SortedBy;
+
+use ::utils::error::{BackendError, BackendResult};
+use ::web::backend::db::{package, package_has_tag, tag, packageversion};
+use ::web::backend::db::schema::{User, PackageHasTag, Tag, PackageVersion};
+use ::web::backend::Storage;
+
+#[derive(Queryable, Debug, Insertable, Identifiable, AsChangeset, Serialize)]
+#[table_name="package"]
 pub struct Package
 {
-    id: String,
+    pub id: String,
     pub project_url: Option<String>,
     pub license_url: Option<String>,
     pub license_acceptance: bool,
@@ -28,12 +37,12 @@ pub struct Package
     pub mailing_list_url: Option<String>,
     pub bug_tracker_url: Option<String>,
     pub report_abuse_url: Option<String>,
-    maintainer: String,
+    pub maintainer: String,
 }
 
 impl Package
 {
-    fn new(id: String, maintainer: &User) -> Self
+    pub fn new(id: String, maintainer: &User) -> Self
     {
         Package {
             id: id,
@@ -82,16 +91,12 @@ impl Package
 
     pub fn delete<C: Connection<Backend=Pg>>(&self, connection: &C) -> BackendResult<()>
     {
-        match connection.transaction(|| {
+        connection.transaction(|| {
             for tag in try!(self.tags(connection)) {
                 try!(tag.disconnect(connection, &self));
             }
             err_discard!(delete(package::table.filter(package::id.eq(&self.id))).execute(connection))
-        }) {
-            Ok(_) => Ok(()),
-            Err(TransactionError::CouldntCreateTransaction(err)) => Err(BackendError::DBError(err)),
-            Err(TransactionError::UserReturnedError(err)) => Err(err),
-        }
+        })
     }
 
     pub fn tags<C: Connection<Backend=Pg>>(&self, connection: &C) -> BackendResult<Vec<Tag>>

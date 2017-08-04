@@ -18,7 +18,6 @@ use iron::status;
 use iron::mime::Mime;
 use iron::modifiers::Redirect;
 use persistent::Read;
-use plugin::Pluggable;
 use router::Router;
 use ::utils::error::BackendError;
 use mustache::{Template, compile_path};
@@ -35,7 +34,7 @@ lazy_static! {
     static ref TEMPLATE: Template = compile_path(PathBuf::from(CONFIG.web.resources.clone()).join("package.html")).unwrap();
 }
 
-#[derive(RustcEncodable, Debug)]
+#[derive(Serialize, Debug)]
 struct Version
 {
     active: bool,
@@ -73,13 +72,13 @@ impl From<PackageVersion> for Version {
     }
 }
 
-#[derive(RustcEncodable)]
+#[derive(Serialize)]
 struct API
 {
     key: String,
 }
 
-#[derive(RustcEncodable)]
+#[derive(Serialize)]
 struct PackagePage
 {
     package: Package,
@@ -109,14 +108,14 @@ pub fn package_newestver(req: &mut Request) -> IronResult<Response> {
             Ok(pkgver) => pkgver.version(),
             Err(_) => return Ok(Response::with((status::TemporaryRedirect, Redirect({
                 let mut base = req.url.clone();
-                base.path.clear();
+                base.as_mut().path_segments_mut().unwrap().clear();
                 base
             })))),
         },
         //most likely the package was not found (TODO match diesel Error as well)
         Err(BackendError::DBError(_)) => return Ok(Response::with((status::TemporaryRedirect, Redirect({
             let mut base = req.url.clone();
-            base.path.clear();
+            base.as_mut().path_segments_mut().unwrap().clear();
             base
         })))),
         Err(err) => {
@@ -127,7 +126,7 @@ pub fn package_newestver(req: &mut Request) -> IronResult<Response> {
 
     Ok(Response::with((status::TemporaryRedirect, Redirect({
         let mut base = req.url.clone();
-        base.path.push(format!("{}", version));
+        base.as_mut().path_segments_mut().unwrap().push(&format!("{}", version));
         base
     }))))
 }
@@ -135,8 +134,8 @@ pub fn package_newestver(req: &mut Request) -> IronResult<Response> {
 pub fn package(req: &mut Request) -> IronResult<Response> {
     let ref id = req.extensions.get::<Router>().unwrap().find("id").unwrap();
     let ref version = req.extensions.get::<Router>().unwrap().find("version").unwrap();
-    let edit = match req.url.path.iter().last() {
-        Some(x) if x == "edit" => true,
+    let edit = match req.url.path().iter().last() {
+        Some(x) if x == &"edit" => true,
         _ => false,
     };
 
@@ -154,7 +153,7 @@ pub fn package(req: &mut Request) -> IronResult<Response> {
         //most likely the package was not found (TODO match diesel Error as well)
         Err(BackendError::DBError(_)) => return Ok(Response::with((status::TemporaryRedirect, Redirect({
             let mut base = req.url.clone();
-            base.path.clear();
+            base.as_mut().path_segments_mut().unwrap().clear();
             base
         })))),
         Err(err) => {

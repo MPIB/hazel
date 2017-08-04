@@ -13,20 +13,27 @@
 // You should have received a copy of the GNU Affero General Public License
 // along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-#[derive(Queryable, Debug)]
-#[insertable_into(packageversion_has_dependency)]
-#[changeset_for(packageversion_has_dependency)]
-struct PackageVersionHasDependency
+use diesel::prelude::*;
+use diesel::pg::Pg;
+use diesel::{insert, delete};
+
+use ::utils::error::BackendResult;
+use ::web::backend::db::packageversion_has_dependency;
+use ::web::backend::db::schema::{Dependency, PackageVersion};
+
+#[derive(Queryable, Debug, Identifiable, Insertable, AsChangeset)]
+#[table_name = "packageversion_has_dependency"]
+pub struct PackageVersionHasDependency
 {
-    id: String,
-    dependency_package_id: String,
-    version: String,
-    version_req: String,
+    pub id: String,
+    pub dependency_package_id: String,
+    pub version: String,
+    pub version_req: String,
 }
 
 impl PackageVersionHasDependency
 {
-    fn new<C: Connection<Backend=Pg>>(connection: &C, package_version: &PackageVersion, dependency: &Dependency) -> BackendResult<Self>
+    pub fn new<C: Connection<Backend=Pg>>(connection: &C, package_version: &PackageVersion, dependency: &Dependency) -> BackendResult<Self>
     {
         let this = PackageVersionHasDependency {
             id: package_version.id.clone(),
@@ -37,7 +44,7 @@ impl PackageVersionHasDependency
         err!(insert(&this).into(packageversion_has_dependency::table).get_result(connection))
     }
 
-    fn get<C: Connection<Backend=Pg>>(connection: &C, package_version: &PackageVersion, dependency: &Dependency) -> BackendResult<Self>
+    pub fn get<C: Connection<Backend=Pg>>(connection: &C, package_version: &PackageVersion, dependency: &Dependency) -> BackendResult<Self>
     {
         err!(packageversion_has_dependency::table.filter(
                 packageversion_has_dependency::id.eq(&package_version.id)
@@ -47,7 +54,7 @@ impl PackageVersionHasDependency
             ).first(connection))
     }
 
-    fn delete<C: Connection<Backend=Pg>>(self, connection: &C) -> BackendResult<()>
+    pub fn delete<C: Connection<Backend=Pg>>(self, connection: &C) -> BackendResult<()>
     {
         err_discard!(delete(packageversion_has_dependency::table.filter(
             packageversion_has_dependency::id.eq(self.id)

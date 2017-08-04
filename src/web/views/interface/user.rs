@@ -30,7 +30,7 @@ lazy_static! {
     static ref TEMPLATE: Template = compile_path(PathBuf::from(CONFIG.web.resources.clone()).join("user.html")).unwrap();
 }
 
-#[derive(RustcEncodable)]
+#[derive(Serialize)]
 struct UserPage
 {
     user: User,
@@ -65,8 +65,8 @@ pub fn user(req: &mut Request) -> IronResult<Response> {
     let rendering = UserPage {
         user: user,
         mail: mail,
-        edit: match req.url.path.iter().last() {
-            Some(x) if x == "edit" => true,
+        edit: match req.url.path().iter().last() {
+            Some(x) if x == &"edit" => true,
             _ => false,
         },
         plainauth: plain,

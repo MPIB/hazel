@@ -44,7 +44,7 @@ pub fn logout(req: &mut Request) -> IronResult<Response>
                             session_store.remove(username);
                             Ok(Response::with((status::TemporaryRedirect, Redirect({
                                 let mut base = req.url.clone();
-                                base.path = vec![String::from("index")];
+                                base.as_mut().set_path("index");
                                 base
                             }))))
                         },
@@ -54,14 +54,14 @@ pub fn logout(req: &mut Request) -> IronResult<Response>
                 },
                 _ => Ok(Response::with((status::TemporaryRedirect, Redirect({
                         let mut base = req.url.clone();
-                        base.path = vec![String::from("index")];
+                        base.as_mut().set_path("index");
                         base
                     })))),
             }
         },
         _ => Ok(Response::with((status::TemporaryRedirect, Redirect({
                 let mut base = req.url.clone();
-                base.path = vec![String::from("index")];
+                base.as_mut().set_path("index");
                 base
             }))))
     }

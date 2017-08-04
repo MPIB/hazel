@@ -13,12 +13,13 @@
 // You should have received a copy of the GNU Affero General Public License
 // along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-use toml_config::ConfigFactory;
 use toml;
 use clap::*;
 use rand::{self, Rng};
 
 use std::cmp;
+use std::io::Read;
+use std::fs::File;
 use std::path::Path;
 
 lazy_static! {
@@ -71,7 +72,7 @@ lazy_static! {
                          .help("Disable console output. Hazel will not make any attempts to open stdout/err")
                      ).get_matches();
 
-        let config_file = cmd_config.value_of("config").unwrap_or("config.toml");
+        let config_file = cmd_config.value_of("config").unwrap_or("hazel.toml");
 
         let db_url = cmd_config.value_of("dburl");
         let storage_path = cmd_config.value_of("storage");
@@ -80,7 +81,12 @@ lazy_static! {
         let quiet = cmd_config.is_present("quiet");
         let verbosity = cmd_config.occurrences_of("verbose");
 
-        let mut file_config: Config = ConfigFactory::load(Path::new(config_file));
+        let mut file = File::open(Path::new(config_file)).expect("Could not read config file");
+        let mut contents = String::new();
+        file.read_to_string(&mut contents).expect("IO Error reading config file");
+
+        let mut file_config: Config = toml::from_str(&contents).expect("Config file is no valid toml");
+
         if db_url.is_some() {
             file_config.backend.db_url = db_url.unwrap().into();
         }
@@ -97,14 +103,15 @@ lazy_static! {
         file_config.log.verbosity = cmp::max(file_config.log.verbosity, verbosity as u8); //TODO maybe better: min(u8_max, verbosity)??
 
         if !file_config.log.quiet {
-            println!("Using config:\n{}", toml::encode_str(&file_config));
+            println!("Using config:\n{}", toml::to_string_pretty(&file_config).unwrap());
         }
 
         file_config
     };
 }
 
-#[derive(RustcEncodable, RustcDecodable, Default)]
+#[derive(Serialize, Deserialize, Default)]
+#[serde(default)]
 pub struct Config {
     pub backend: BackendConfig,
     pub server: ServerConfig,
@@ -114,7 +121,8 @@ pub struct Config {
 }
 
 
-#[derive(RustcEncodable, RustcDecodable)]
+#[derive(Serialize, Deserialize)]
+#[serde(default)]
 pub struct WebConfig {
     pub max_upload_filesize_mb: u32,
     pub resources: String,
@@ -130,7 +138,8 @@ impl Default for WebConfig
     }
 }
 
-#[derive(RustcEncodable, RustcDecodable)]
+#[derive(Serialize, Deserialize)]
+#[serde(default)]
 pub struct BackendConfig {
     pub db_url: String,
     pub storage: String,
@@ -148,7 +157,8 @@ impl Default for BackendConfig
     }
 }
 
-#[derive(RustcEncodable, RustcDecodable)]
+#[derive(Serialize, Deserialize)]
+#[serde(default)]
 pub struct ServerConfig {
     pub port: u16,
     pub https: Option<HTTPSConfig>,
@@ -164,14 +174,15 @@ impl Default for ServerConfig
     }
 }
 
-#[derive(RustcEncodable, RustcDecodable, Clone)]
+#[derive(Serialize, Deserialize, Clone)]
 pub struct HTTPSConfig
 {
     pub certificate: String,
     pub key: String,
 }
 
-#[derive(RustcEncodable, RustcDecodable)]
+#[derive(Serialize, Deserialize)]
+#[serde(default)]
 pub struct LogConfig {
     pub logfile: Option<String>,
     pub quiet: bool,
@@ -189,7 +200,8 @@ impl Default for LogConfig
     }
 }
 
-#[derive(RustcEncodable, RustcDecodable)]
+#[derive(Serialize, Deserialize)]
+#[serde(default)]
 pub struct AuthenticationConfig {
     pub ldap: Option<LDAPConfig>,
     pub superuser_password: String,
@@ -217,7 +229,7 @@ impl Default for AuthenticationConfig
     }
 }
 
-#[derive(RustcEncodable, RustcDecodable)]
+#[derive(Serialize, Deserialize)]
 pub struct MailConfig {
     pub hostname: String,
     pub port: Option<u16>,
@@ -232,7 +244,7 @@ pub struct MailConfig {
     pub domain_website: String,
 }
 
-#[derive(RustcEncodable, RustcDecodable)]
+#[derive(Serialize, Deserialize)]
 pub struct LDAPConfig {
     pub server_uri: String,
     pub login_mask: String,

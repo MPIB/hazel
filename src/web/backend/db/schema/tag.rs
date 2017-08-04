@@ -13,11 +13,19 @@
 // You should have received a copy of the GNU Affero General Public License
 // along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-#[derive(Queryable, Debug, PartialEq, Eq)]
-#[insertable_into(tag)]
+use diesel::prelude::*;
+use diesel::pg::Pg;
+use diesel::{insert, delete};
+
+use ::utils::error::BackendResult;
+use ::web::backend::db::{tag, package_has_tag, package};
+use ::web::backend::db::schema::{Package, PackageHasTag};
+
+#[derive(Queryable, Debug, PartialEq, Eq, Identifiable, Insertable)]
+#[table_name = "tag"]
 pub struct Tag
 {
-    id: String,
+    pub id: String,
 }
 
 impl Tag
@@ -76,15 +84,11 @@ impl Tag
     {
         match PackageHasTag::get(connection, package, &self) {
             Ok(has) => {
-                match connection.transaction(move || {
+                connection.transaction(move || {
                     try!(has.delete(connection));
                     if try!(self.belongs(connection)).len() == 0 { try!(self.delete(connection)); }
                     Ok(())
-                }) {
-                    Ok(()) => Ok(()),
-                    Err(TransactionError::CouldntCreateTransaction(err)) => Err(BackendError::DBError(err)),
-                    Err(TransactionError::UserReturnedError(err)) => Err(err),
-                }
+                })
             },
             Err(x) => Err(x),
         }

@@ -28,14 +28,16 @@ header! { (XNugetApiKey, "X-NuGet-ApiKey") => [String] }
 pub fn upload(req: &mut Request) -> IronResult<Response> {
     let params = req.get_ref::<Params>().unwrap().clone();
 
-    let apikey = req.headers.get::<XNugetApiKey>().cloned().unwrap().0;
+    let apikey_raw = req.headers.get_raw("X-NuGet-ApiKey").expect("No Raw API Key");
+    info!("Api Key: {:?}", apikey_raw);
+    let apikey = req.headers.get::<XNugetApiKey>().cloned().expect("No API Key").0;
 
     let storage = req.extensions.get::<Read<StorageKey>>().unwrap();
     let connection_pool = req.extensions.get::<Read<ConnectionPoolKey>>().unwrap();
     let connection = match connection_pool.get() {
         Ok(connection) => connection,
         Err(x) => {
-            print!("{:?}", x);
+            error!("Database Error: {:?}", x);
             return Ok(Response::with((status::InternalServerError, "Database Error, please try again later")));
         }
     };
@@ -48,15 +50,21 @@ pub fn upload(req: &mut Request) -> IronResult<Response> {
                         Ok(_) => Ok(Response::with(status::Ok)),
                         Err(BackendError::PermissionDenied) => Ok(Response::with((status::Forbidden, "Only the maintainer or admin is allowed to update a package"))),
                         Err(err) => {
-                            error!("{}", err);
+                            error!("Permission Error: {}", err);
                             Ok(Response::with((status::BadRequest, format!("{}", err))))
                         },
                     }
                 },
-               _ => Ok(Response::with((status::BadRequest, "package is no File"))),
+               _ => {
+                   error!("Package is no file");
+                   Ok(Response::with((status::BadRequest, "package is no File")))
+                },
             }
         },
         //TODO better match
-        Err(_) => Ok(Response::with((status::InternalServerError, "No User with matching API-Key found"))),
+        Err(x) => {
+            error!("No user: {}", x);
+            Ok(Response::with((status::InternalServerError, "No User with matching API-Key found")))
+        },
     }
 }
