@@ -27,7 +27,8 @@ fs2 = "^0.4.2"
 rust-crypto = "^0.2.36"
 zip = "^0.1.0"
 lazy_static = "^0.2.5"
-params = "^0.6.0"
+params = "0.6.0"
+multipart = { version = "^0.13.1", features = ["iron"] }
 semver = { git = "https://github.com/MPIB/semver.git", rev = "65820b04b0a09d35d12df81a3c45aa7564f4a491" }
 quick-error = "^1.2.0"
 clap = "=2.26.0"

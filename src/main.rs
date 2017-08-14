@@ -35,6 +35,7 @@ extern crate fs2;
 extern crate crypto;
 extern crate zip;
 extern crate params;
+extern crate multipart;
 extern crate semver;
 extern crate mustache;
 extern crate lazysort;

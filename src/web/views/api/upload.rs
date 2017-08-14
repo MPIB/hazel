@@ -16,8 +16,9 @@
 use iron::{Request, Response, IronResult};
 use iron::status;
 use persistent::Read;
-use plugin::Pluggable;
-use params::{Params, Value};
+use multipart::server::Entries;
+
+use std::fs::File;
 
 use ::web::server::{ConnectionPoolKey, StorageKey};
 use ::web::backend::db::{PackageVersion, User};
@@ -26,7 +27,7 @@ use ::utils::error::BackendError;
 header! { (XNugetApiKey, "X-NuGet-ApiKey") => [String] }
 
 pub fn upload(req: &mut Request) -> IronResult<Response> {
-    let params = req.get_ref::<Params>().unwrap().clone();
+    let params = req.extensions.get::<Entries>().unwrap().clone();
 
     let apikey_raw = req.headers.get_raw("X-NuGet-ApiKey").expect("No Raw API Key");
     info!("Api Key: {:?}", apikey_raw);
@@ -44,9 +45,9 @@ pub fn upload(req: &mut Request) -> IronResult<Response> {
 
     match User::get_by_apikey(&*connection, &apikey) {
         Ok(user) => {
-            match params.find(&["package"]) {
-                Some(&Value::File(ref file)) => {
-                    match PackageVersion::new(&*connection, &user, storage, file.open().unwrap()) {
+            match params.files.get("package").and_then(|x| x.get(0)) {
+                Some(file) => {
+                    match PackageVersion::new(&*connection, &user, storage, File::open(&file.path).unwrap()) {
                         Ok(_) => Ok(Response::with(status::Ok)),
                         Err(BackendError::PermissionDenied) => Ok(Response::with((status::Forbidden, "Only the maintainer or admin is allowed to update a package"))),
                         Err(err) => {

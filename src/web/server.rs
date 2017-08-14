@@ -25,6 +25,7 @@ use mount::Mount;
 use router::Router;
 use persistent::{Read, Write};
 use staticfile::Static;
+use multipart::server::iron::Intercept;
 
 use r2d2::Pool;
 use diesel::pg::PgConnection;
@@ -212,6 +213,7 @@ pub fn start(pool: Pool<ConnectionManager<PgConnection>>, storage: Storage) -> L
     chain.link_around(SessionManager);
     chain.link_before(PathNormalizer);
     chain.link_before(Logger);
+    chain.link_before(Intercept::default().file_size_limit((CONFIG.web.max_upload_filesize_mb * 1024 * 1024) as u64));
     chain.link(Read::<ConnectionPoolKey>::both(pool));
     chain.link(Read::<StorageKey>::both(storage));
     chain.link(Write::<SessionStoreKey>::both(HashMap::new()));
