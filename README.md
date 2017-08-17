@@ -18,7 +18,7 @@ but rather to provide everything necessary for chocolatey and possibly extend on
 ### Hard way
 1. Get Rust 1.9.0 or higher
 2. Get libssl-dev, libpq-dev, libldap2-dev
-3. Run `cargo build --release --no-default-features --features stable`
+3. Run `cargo build --release`
 4. (Optional for deb) Get libldap2-dev and pkg-config
 5. (Optional for deb) Get cargo-deb (`cargo install --git https://github.com/mmstick/cargo-deb/`)
 6. (Optional for deb) Run `cargo deb --no-build`
