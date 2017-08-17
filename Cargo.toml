@@ -56,9 +56,9 @@ toml = "0.4"
 [package.metadata.deb]
 maintainer = "Victor Brekenfeld <brekenfeld@mpib-berlin.mpg.de>"
 copyright = "2016, Max Planck Institute for Human Development <https://www.mpib-berlin.mpg.de>"
-license_file = ["LICENSE", "3"]
-extended_description = "Hazel is a Chocolatey-compatible multi-platform Package Server written in Rust"
-depends = "openssl, libldap-2.4-2, postgresql (>= 9.4)"
+license-file = ["LICENSE", "3"]
+extended-description = "Hazel is a Chocolatey-compatible multi-platform Package Server written in Rust"
+depends = "openssl,libldap-2.4-2,postgresql(>=9.4)"
 section = "web"
 priority = "optional"
 assets = [
