@@ -43,6 +43,9 @@ pub struct SessionInfo
 
 fn handle(req: &mut Request, handler: &Box<Handler>) -> IronResult<Response, > {
     req.extensions.insert::<Authenticated>((false, None));
+    if req.url.path().pop().map(|x| x == "login").unwrap_or(false) {
+        return handler.handle(req);
+    }
 
     //parse cookies, set auth status
     let cookies = req.headers.get::<CookieHeader>().cloned();
@@ -119,7 +122,7 @@ fn handle(req: &mut Request, handler: &Box<Handler>) -> IronResult<Response, > {
                 x => x,
             }
         },
-        None => handler.handle(req),
+        _ => handler.handle(req),
     }
 }
 
