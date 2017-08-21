@@ -187,7 +187,7 @@ impl PackageVersion
                                     .flat_map(|entry: Element| entry.children.into_iter())
                                     .chain(
                                         children.into_iter().filter(|entry: &Element| entry.name == "dependency")
-                                    )
+                                    ).filter(|dependency| dependency.attributes.get("id").map(|id| !id.starts_with("chocolatey-core")).unwrap_or(false))
                     } {
                         let dependency: Element = dependency;
 
@@ -199,7 +199,7 @@ impl PackageVersion
 
                         match Dependency::get(connection, &*found_id, &req) {
                             Ok(dep) => try!(dep.connect(connection, &this)),
-                            Err(_) => { try!(Dependency::new(connection, &this, &package, &req)); },
+                            Err(_) => { try!(Dependency::new(connection, &this, &try!(Package::get(connection, &*found_id)), &req)); },
                         };
                     },
                 None => {},
