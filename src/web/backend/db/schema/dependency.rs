@@ -46,8 +46,9 @@ impl Dependency
             version_req: format!("{}", version_req),
         };
 
+        let dep = try!(insert(&this).into(dependency::table).get_result(connection));
         try!(PackageVersionHasDependency::new(connection, package_version, &this));
-        err!(insert(&this).into(dependency::table).get_result(connection))
+        Ok(dep)
     }
 
     pub fn get<C: Connection<Backend=Pg>>(connection: &C, id: &str, version_req: &VersionReq) -> BackendResult<Self>
